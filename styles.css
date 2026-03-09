@@ -1,0 +1,47 @@
+/* ===== Global variables (:root) ===== */
+:root {
+    --background-color: #323232;
+    --color-bg-outer: #232323;
+    --color-surface: #1e1e1e;
+    --color-text: #ffffff;
+    }
+
+/* ======================================================
+STANDARD RULES (Base Styles, Reset, Structure)
+======================================================= */
+
+/* ====== 1. Reset / Normalization ==================== */
+/* Normalize spacing and box model */
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ====== 2. Base HTML & Body Setup ==================== */
+/* Set full height, font, and default background */
+html,
+body {
+    height: 100%;
+    width: 100%;
+    background-color: var(--background-color);
+}
+
+/* ====== 3. Semantic Element Defaults ================== */
+/* Basic styling for standard HTML elements */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+canvas {
+    display: block;
+    background-color: var(--color-bg-outer);
+}
