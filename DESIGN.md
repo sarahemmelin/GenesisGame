@@ -47,7 +47,9 @@ Color is decided by THREE genes working together:
 Each gene has two alleles (diploid). Alleles blend by strength — no simple dominant/recessive. This architecture also supports co-dominance and epistasis later without refactoring.
 
 ### Size gene
-- Decided by alleles
+- Founding values: `'large'` and `'small'` only (defined in `constants.mjs`)
+- `'medium'` is **not a founding value** — it emerges naturally through blending
+  when a large and small ember breed over generations
 - Large ember → lives longer, longer mate cooldown
 - Small ember → lives shorter, shorter mate cooldown
 
