@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GENESIS: EMBER</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="topbar">
+  <div class="counter">ROUND&nbsp;<span id="r-disp">—</span></div>
+  <div style="width:1px;height:20px;background:#1e1e2e"></div>
+  <div class="counter">GEN&nbsp;<span id="g-disp">—</span></div>
+  <div id="topbar-title">GENESIS : EMBER</div>
+  <button id="glossary-btn" onclick="toggleGlossary()">Glossary</button>
+</div>
+
+<div id="main">
+  <div id="left-panel">
+    <div class="panel-label">God Powers</div>
+    <div class="power-wrap">
+      <button class="god-btn" id="btn-scoop" onclick="activatePower('scoop')"><span class="god-icon">⊕</span><div><div>Scoop</div><div class="god-desc">Relocate a cluster</div></div></button>
+      <button class="god-btn" id="btn-isolate" onclick="activatePower('isolate')"><span class="god-icon">⊘</span><div><div>Isolate</div><div class="god-desc">Draw a barrier</div></div></button>
+      <button class="god-btn" id="btn-bridge" onclick="activatePower('bridge')"><span class="god-icon">⊞</span><div><div>Bridge</div><div class="god-desc">Remove barrier</div></div></button>
+      <button class="god-btn" id="btn-disaster" onclick="activatePower('disaster')"><span class="god-icon">⚡</span><div><div>Disaster</div><div class="god-desc">Trigger event now</div></div></button>
+    </div>
+    <div id="act-info">
+      <div id="act-label">Act 1 — The Founding</div>
+      <div id="act-desc">Drag to select up to 100 embers from the Glowing Grove.</div>
+      <div id="pop-display">Population: <span id="pop-count">—</span></div>
+    </div>
+  </div>
+
+  <div id="canvas-wrap">
+    <canvas id="game-canvas"></canvas>
+    <canvas id="barrier-canvas"></canvas>
+    <div id="selection-info">Selected: <span id="sel-count">0</span> / 100</div>
+    <button id="confirm-btn" onclick="confirmFounders()">Confirm Founding Population</button>
+    <div id="round-event-banner"></div>
+  </div>
+
+  <div id="right-panel">
+    <div>
+      <div class="section-title">Color Allele Frequency</div>
+      <div class="bar-row"><div class="bar-key" style="color:#e63946">C</div><div class="bar-bg"><div class="bar-fill" id="bar-C" style="background:#e63946;width:25%"></div></div><div class="bar-pct" id="pct-C">25%</div></div>
+      <div class="bar-row"><div class="bar-key" style="color:#9b5de5">V</div><div class="bar-bg"><div class="bar-fill" id="bar-V" style="background:#9b5de5;width:25%"></div></div><div class="bar-pct" id="pct-V">25%</div></div>
+      <div class="bar-row"><div class="bar-key" style="color:#ffd700">G</div><div class="bar-bg"><div class="bar-fill" id="bar-G" style="background:#ffd700;width:25%"></div></div><div class="bar-pct" id="pct-G">25%</div></div>
+      <div class="bar-row"><div class="bar-key" style="color:#00b4d8">B</div><div class="bar-bg"><div class="bar-fill" id="bar-B" style="background:#00b4d8;width:25%"></div></div><div class="bar-pct" id="pct-B">25%</div></div>
+    </div>
+    <hr class="div">
+    <div>
+      <div class="section-title">Size Allele Frequency</div>
+      <div class="bar-row"><div class="bar-key" style="color:#8080a8">L</div><div class="bar-bg"><div class="bar-fill" id="bar-L" style="background:#505070;width:50%"></div></div><div class="bar-pct" id="pct-L">50%</div></div>
+      <div class="bar-row"><div class="bar-key" style="color:#505068">S</div><div class="bar-bg"><div class="bar-fill" id="bar-S" style="background:#303048;width:50%"></div></div><div class="bar-pct" id="pct-S">50%</div></div>
+    </div>
+    <hr class="div">
+    <div id="diversity-wrap">
+      <div class="section-title" style="align-self:flex-start">Diversity Index</div>
+      <canvas id="div-canvas" width="96" height="96"></canvas>
+      <div id="div-value">—%</div>
+      <div id="div-sub">Shannon Entropy</div>
+      <div id="win-threshold">▲ Win threshold: 40%</div>
+    </div>
+    <hr class="div">
+    <div id="log-wrap">
+      <div class="section-title">Event Log</div>
+      <div id="event-log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup -->
+<div id="popup-overlay">
+  <div id="popup-box">
+    <div id="popup-title"></div>
+    <div id="popup-body"></div>
+    <button id="popup-ok" onclick="closePopup()">Understood</button>
+  </div>
+</div>
+
+<!-- End Screen -->
+<div id="end-screen">
+  <div id="end-title">Genesis : Ember</div>
+  <div id="end-sub"></div>
+  <div class="end-charts">
+    <div class="end-col"><div class="end-col-title">Founding Population</div><div id="end-founder"></div></div>
+    <div class="end-col"><div class="end-col-title">Final Population</div><div id="end-final"></div></div>
+  </div>
+  <div id="end-narrative"></div>
+  <div id="end-science">
+    <strong>On Neutral Evolution &amp; Mendel's Limits</strong><br><br>
+    Most allele frequency shifts you witnessed were not driven by selection — no allele is universally better than another.
+    Blue embers tend to dominate by Act 3 not because they are superior, but because random chance amplifies small starting differences in small populations.
+    This is <em>genetic drift</em>: neutral evolution through randomness alone.<br><br>
+    Gregor Mendel's laws describe how traits are inherited, but say nothing about which traits <em>should</em> be inherited.
+    Eugenics misread genetics as a guide for "improving" humanity — but diversity is the engine of resilience.
+    Every allele you tried to eliminate may have carried hidden value in an environment you hadn't imagined yet.
+  </div>
+  <button id="end-restart" onclick="restartGame()">Restart Experiment</button>
+</div>
+
+<!-- Glossary -->
+<div id="glossary-panel">
+  <div class="panel-label" style="margin-bottom:12px">Glossary</div>
+  <div class="g-term" id="gl-allele">Allele</div>
+  <div class="g-def">One variant of a gene. Each ember carries two — one from each parent.</div>
+  <div class="g-term" id="gl-founder">Founder Effect</div>
+  <div class="g-def">When a small group starts a new population, their random alleles shape all future diversity — not because they were better, but because chance selected them.</div>
+  <div class="g-term" id="gl-drift">Genetic Drift</div>
+  <div class="g-def">Random changes in allele frequency, strongest in small populations. Not selection — pure chance compounding over time.</div>
+  <div class="g-term" id="gl-fixation">Fixation</div>
+  <div class="g-def">When one allele reaches 100% frequency. All diversity for that trait is permanently lost.</div>
+  <div class="g-term" id="gl-bottleneck">Bottleneck</div>
+  <div class="g-def">A sharp population reduction that randomly wipes alleles regardless of usefulness. Survivors reflect luck, not fitness.</div>
+  <div class="g-term" id="gl-recessive">Recessive Allele</div>
+  <div class="g-def">Hidden behind a dominant allele, but can reappear in offspring if both parents carry it. Cannot be "selected out" without eliminating all carriers.</div>
+  <div class="g-term" id="gl-mutation">Mutation</div>
+  <div class="g-def">A new allele not present in either parent, arising from a copy error. The ultimate source of all new genetic variation.</div>
+  <div class="g-term" id="gl-geneflow">Gene Flow</div>
+  <div class="g-def">Movement of alleles between groups via migration and interbreeding. Isolation blocks it; barriers reduce it.</div>
+  <div class="g-term" id="gl-neutral">Neutral Evolution</div>
+  <div class="g-def">Evolution driven by drift, not selection. Most genetic change across a population is neutral — neither helpful nor harmful.</div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
