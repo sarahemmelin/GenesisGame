@@ -16,24 +16,32 @@ class Ember {
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
 
         if (parentA !== null && parentB !== null){
+            const colorFromA = parentA.colorAlleles[Math.floor(Math.random() * 2)];
+            const colorFromB = parentB.colorAlleles[Math.floor(Math.random() * 2)];
             this.colorAlleles = [
-                parentA.colorAlleles[Math.floor(Math.random() * 2)],
-                parentB.colorAlleles[Math.floor(Math.random() * 2)]
+                new Allele(colorFromA.gene, colorFromA.value, colorFromA.strength),
+                new Allele(colorFromB.gene, colorFromB.value, colorFromB.strength)
             ];
 
+            const sizeFromA = parentA.sizeAlleles[Math.floor(Math.random() * 2)];
+            const sizeFromB = parentB.sizeAlleles[Math.floor(Math.random() * 2)];
             this.sizeAlleles = [
-                parentA.sizeAlleles[Math.floor(Math.random() * 2)],
-                parentB.sizeAlleles[Math.floor(Math.random() * 2)]
+                new Allele(sizeFromA.gene, sizeFromA.value, sizeFromA.strength),
+                new Allele(sizeFromB.gene, sizeFromB.value, sizeFromB.strength)
             ];
 
+            const saturationFromA = parentA.saturationAlleles[Math.floor(Math.random() * 2)];
+            const saturationFromB = parentB.saturationAlleles[Math.floor(Math.random() * 2)];
             this.saturationAlleles = [
-                parentA.saturationAlleles[Math.floor(Math.random() * 2)],
-                parentB.saturationAlleles[Math.floor(Math.random() * 2)]
+                new Allele(saturationFromA.gene, saturationFromA.value, saturationFromA.strength),
+                new Allele(saturationFromB.gene, saturationFromB.value, saturationFromB.strength)
             ];
 
+            const glowFromA = parentA.glowAlleles[Math.floor(Math.random() * 2)]
+            const glowFromB = parentB.glowAlleles[Math.floor(Math.random() * 2)]
             this.glowAlleles = [
-                parentA.glowAlleles[Math.floor(Math.random() * 2)],
-                parentB.glowAlleles[Math.floor(Math.random() * 2)]
+                new Allele(glowFromA.gene, glowFromA.value, glowFromA.strength),
+                new Allele(glowFromB.gene, glowFromB.value, glowFromB.strength)
             ];
 
         } else {

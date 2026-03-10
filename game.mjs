@@ -14,7 +14,7 @@ for (let i = 0; i < 10; i++){
 function gameLoop(){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     embers = embers.filter(ember => ember.age < ember.lifespan);
-    if (embers.length > 50) embers.length = 50;
+    if (embers.length > 200) embers.length = 200;
 
     for (let i = 0; i < embers.length; i++) {
     for (let j = i + 1; j < embers.length; j++) {
