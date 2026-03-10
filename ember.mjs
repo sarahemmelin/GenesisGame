@@ -4,14 +4,12 @@ import Allele from './allele.mjs';
 class Ember {
     constructor(x,y, parentA = null, parentB = null){
         const colorKeys = Object.keys(BASE_COLORS);
+        const sizeKeys = Object.keys(SIZES);
         this.x = x;
         this.y = y;
-        this.vx = ((Math.random() -0.5) * 5);
-        this.vy = ((Math.random() -0.5) * 5);
         //Small embers should later move faster while bigger embers are slower
        
         this.age = 0;
-        this.lifespan = Math.random() * 2000 + 1000;
         this.matingCooldown = 0;
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
 
@@ -47,9 +45,9 @@ class Ember {
         } else {
         this.sizeAlleles = [
             new Allele('baseSize', 
-            SIZES[Math.floor(Math.random() * SIZES.length)]),
+            sizeKeys[Math.floor(Math.random() * sizeKeys.length)]),
             new Allele('baseSize',
-            SIZES[Math.floor(Math.random() * SIZES.length)])
+            sizeKeys[Math.floor(Math.random() * sizeKeys.length)])
         ];
 
         this.colorAlleles = [
@@ -69,6 +67,13 @@ class Ember {
             new Allele('baseGlow', Math.random())
         ];
         }
+
+        const size1 = SIZES[this.sizeAlleles[0].value];
+        const size2 = SIZES[this.sizeAlleles[1].value];
+        this.radius = (size1 * this.sizeAlleles[0].strength + size2 * this.sizeAlleles[1].strength) / (this.sizeAlleles[0].strength + this.sizeAlleles[1].strength);
+        this.lifespan = this.radius * 200;
+        this.vx = ((Math.random() -0.5) * (30/ this.radius));
+        this.vy = ((Math.random() -0.5) * (30/ this.radius));
     }
 
 
@@ -83,11 +88,11 @@ class Ember {
         const b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / (allele1.strength + allele2.strength);
         
         const color = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
-        
+
         ctx.shadowColor = color;
         ctx.shadowBlur = 20;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
     }
