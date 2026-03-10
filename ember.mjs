@@ -5,6 +5,9 @@ class Ember {
     constructor(x,y){
         this.x = x;
         this.y = y;
+        this.vx = ((Math.random() -0.5) * 5);
+        this.vy = ((Math.random() -0.5) * 5);
+        //Small embers should later move faster while bigger embers are slower
         this.sizeAlleles = [
             new Allele('baseSize', 
             SIZES[Math.floor(Math.random() * SIZES.length)]),
@@ -36,6 +39,16 @@ class Ember {
         ctx.arc(this.x, this.y, 10, 0, Math.PI * 2);
         ctx.fillStyle = 'crimson';
         ctx.fill();
+    }
+
+    update(width, height){
+        if (this.x > width) this.vx = -this.vx;
+        if (this.x < 0) this.vx = -this.vx;
+        if (this.y > height) this.vy = -this.vy;
+        if (this.y < 0) this.vy = -this.vy;
+
+        this.x += this.vx;
+        this.y += this.vy;
     }
 
 } 
