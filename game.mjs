@@ -113,7 +113,7 @@ function gameLoop(){
     const isFixed = embers.every(ember =>
         dominant(ember) === firstColor);
 
-    if (isFixed){
+    if (isFixed && embers.length >= 10){
         ctx.fillStyle = 'orange';
         ctx.font = 'bold 72px serif';
         ctx.textAlign = 'center';
