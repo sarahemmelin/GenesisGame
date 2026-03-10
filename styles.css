@@ -46,3 +46,36 @@ canvas {
     background-color: var(--color-bg-outer);
     cursor: pointer;
 }
+
+/* start-screen styling */
+#start-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid #555;
+    z-index: 10;
+}
+
+#start-screen h1 {
+    margin-bottom: 1rem;
+}
+
+
+#start-screen p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+#start-button {
+    padding: 0.75rem 2rem;
+    background-color: crimson;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+}

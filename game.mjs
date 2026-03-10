@@ -11,6 +11,13 @@ let mouseY = 0;
 
 let draggedEmber = null;
 
+const startScreen = document.getElementById('start-screen');
+    document.getElementById('start-button').addEventListener('click', () => {
+    startScreen.style.display = 'none';
+    requestAnimationFrame(gameLoop);
+});
+
+
 canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -98,5 +105,3 @@ function gameLoop(){
 
     requestAnimationFrame(gameLoop);
 }
-
-requestAnimationFrame(gameLoop);
