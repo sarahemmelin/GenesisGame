@@ -7,7 +7,6 @@ class Ember {
         const sizeKeys = Object.keys(SIZES);
         this.x = x;
         this.y = y;
-        //Small embers should later move faster while bigger embers are slower
        
         this.age = 0;
         this.matingCooldown = 0;

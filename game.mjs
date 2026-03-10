@@ -103,5 +103,25 @@ function gameLoop(){
     ctx.font = '12px serif';
     ctx.fillText('← GOD', mouseX + 40, mouseY);
 
+    //Fixation
+    const dominant = ember => ember.colorAlleles[0].strength >= ember.colorAlleles[1].strength
+    ? ember.colorAlleles[0].value
+    : ember.colorAlleles[1].value;
+
+    const firstColor = dominant(embers[0]);
+
+    const isFixed = embers.every(ember =>
+        dominant(ember) === firstColor);
+
+    if (isFixed && embers.length >= 10){
+        ctx.fillStyle = 'orange';
+        ctx.font = 'bold 72px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('FIXATION', canvas.width / 2, canvas.height / 2);
+        return;
+    }
+
+
+
     requestAnimationFrame(gameLoop);
 }
