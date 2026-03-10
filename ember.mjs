@@ -37,8 +37,8 @@ class Ember {
                 new Allele(saturationFromB.gene, saturationFromB.value, saturationFromB.strength)
             ];
 
-            const glowFromA = parentA.glowAlleles[Math.floor(Math.random() * 2)]
-            const glowFromB = parentB.glowAlleles[Math.floor(Math.random() * 2)]
+            const glowFromA = parentA.glowAlleles[Math.floor(Math.random() * 2)];
+            const glowFromB = parentB.glowAlleles[Math.floor(Math.random() * 2)];
             this.glowAlleles = [
                 new Allele(glowFromA.gene, glowFromA.value, glowFromA.strength),
                 new Allele(glowFromB.gene, glowFromB.value, glowFromB.strength)

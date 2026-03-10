@@ -44,4 +44,5 @@ footer {
 canvas {
     display: block;
     background-color: var(--color-bg-outer);
+    cursor: pointer;
 }
