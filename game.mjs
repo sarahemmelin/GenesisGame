@@ -85,21 +85,42 @@ function gameLoop(){
             const targetDist = a.radius + b.radius;
             b.x = a.x - dx / distance * targetDist;
             b.y = a.y - dy / distance * targetDist;
-
-    //     a.matingCooldown = 100;
-    //     b.matingCooldown = 100;
-    //     const offspring = new Ember(
-    //         (a.x + b.x) / 2,
-    //         (a.y + b.y) / 2,
-    //         a,
-    //         b
-    //     );
-    // embers.push(offspring);
-
         }
     }
+    }
+    embers.forEach(ember => {
+    if (ember.gender === 'male' && ember.matingTimer >= 600) {
+        const roll = Math.random();
+        let count;
+        if (roll < 0.05) {
+            count = 0;
+        } else if (roll < 0.65) {
+            count = 1;
+        } else if (roll < 0.95) {
+            count = 2;
+        } else {
+            count = 3;
+        }
+
+        for (let i = 0; i < count; i++) {
+            const offspring = new Ember(
+                (ember.x + ember.matingWith.x) / 2,
+                (ember.y + ember.matingWith.y) / 2,
+                ember,
+                ember.matingWith
+            );
+            embers.push(offspring);
+        }
+        const female = ember.matingWith;
+        female.matingWith = null;
+        female.matingCooldown = 1000;
+        ember.matingWith = null;
+        ember.matingTimer = 0;
+        ember.matingCooldown = 200;
+
 
     }
+});
 
     embers.forEach(ember => {
         ember.update(canvas.width, canvas.height);
