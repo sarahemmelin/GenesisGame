@@ -9,8 +9,10 @@ class Ember {
         this.y = y;
        
         this.age = 0;
-        this.matingCooldown = 0;
+        this.matingCooldown = 300;
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
+        this.matingWith = null;
+        this.matingTimer = 0;
 
         if (parentA !== null && parentB !== null){
             const colorFromA = parentA.colorAlleles[Math.floor(Math.random() * 2)];
@@ -70,7 +72,7 @@ class Ember {
         const size1 = SIZES[this.sizeAlleles[0].value];
         const size2 = SIZES[this.sizeAlleles[1].value];
         this.radius = (size1 * this.sizeAlleles[0].strength + size2 * this.sizeAlleles[1].strength) / (this.sizeAlleles[0].strength + this.sizeAlleles[1].strength);
-        this.lifespan = this.radius * 200;
+        this.lifespan = this.radius * 300;
         this.vx = ((Math.random() -0.5) * (30/ this.radius));
         this.vy = ((Math.random() -0.5) * (30/ this.radius));
     }
@@ -94,9 +96,29 @@ class Ember {
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
+
+
+
     }
 
     update(width, height){
+        if (this.matingWith !== null && this.gender === 'female') return;
+        if (this.matingWith !== null && this.gender === 'male') {
+            const distanceX = this.x - this.matingWith.x;
+            const distanceY = this.y - this.matingWith.y;
+            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+            const targetDist = this.radius + this.matingWith.radius;
+            const stretch = Math.sin(this.matingTimer * 0.1) * 3;
+            
+            this.x = this.matingWith.x + distanceX / distance * (targetDist + stretch);
+            this.y = this.matingWith.y + distanceY / distance * (targetDist + stretch);
+            
+            this.matingTimer++;
+
+
+            return;
+        }
+
         if (this.x > width){
              this.vx = -this.vx;
         };
