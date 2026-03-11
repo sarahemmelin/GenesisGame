@@ -29,7 +29,7 @@ Each allele has three properties:
 - TODO: if strength drops below 0.1, consider triggering a mutation
 
 ### Guard clauses
-- TODO: add guard clauses to throw errors if `gene` or `value` are missing
+- TODO: add guard clauses to throw errors if `gene` or `value` are missing because Christian says so
 
 ---
 
@@ -95,7 +95,7 @@ born (tiny)
 
 ## Architecture Principles
 
-- **Fail loudly** — missing required data should throw a visible error, not silently produce wrong values
+- **Fail loudly** — missing required data should throw a visible error, not silently produce wrong values because Christian says so
 - **Design for extension** — e.g. blending by strength now means co-dominance and epistasis can be added later without refactoring
 - **Placeholder first** — hardcode values until the system that generates them is ready
 - **One responsibility per file** — Allele knows about alleles, Ember knows about one ember, game.js knows about the world
@@ -107,8 +107,16 @@ born (tiny)
 - [ ] Add guard clauses to `Allele` constructor
 - [ ] Add mutation trigger when strength < 0.1
 - [ ] Decide sterility percentage
-- [ ] Build `draw()` method on Ember
-- [ ] Build `update()` method on Ember
-- [ ] Design mating / reproduction system
-- [ ] Build `game.js` loop
-- [ ] Build `index.html` (new simple version)
+- [x] Build `draw()` method on Ember
+- [x] Build `update()` method on Ember
+- [x] Design mating / reproduction system
+- [x] Build `game.mjs` loop
+- [x] Build `index.html` + start screen
+- [x] Size alleles resolve to radius — blended by strength
+- [x] Lifespan tied to radius (larger = longer)
+- [x] Speed tied to radius (smaller = faster)
+- [ ] Implement saturation and glow in `draw()`
+- [ ] Add mating visual (embers stick together briefly)
+- [ ] Add population counter UI
+- [x] Detect color fixation (all embers same color) → trigger lose condition
+
