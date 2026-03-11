@@ -1,6 +1,6 @@
 export const SIZES = {
-    small: 7, 
-    large: 16
+    small: 12, 
+    large: 20
 };
 
 export const BASE_COLORS = {
