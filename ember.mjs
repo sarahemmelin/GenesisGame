@@ -11,6 +11,8 @@ class Ember {
         this.age = 0;
         this.matingCooldown = 0;
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
+        this.matingWith = null;
+        this.matingTimer = 0;
 
         if (parentA !== null && parentB !== null){
             const colorFromA = parentA.colorAlleles[Math.floor(Math.random() * 2)];
@@ -94,9 +96,19 @@ class Ember {
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
+
+        if (this.matingWith !== null) {
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y);
+            ctx.lineTo(this.matingWith.x, this.matingWith.y);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+}
+
     }
 
     update(width, height){
+        if (this.matingWith !== null) return;
         if (this.x > width){
              this.vx = -this.vx;
         };

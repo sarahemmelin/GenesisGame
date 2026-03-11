@@ -76,18 +76,25 @@ function gameLoop(){
             distance < 50 &&
             a.gender !== b.gender &&
             a.age > 100 && b.age > 100 &&
-            a.matingCooldown === 0 && b.matingCooldown === 0
+            a.matingCooldown === 0 && b.matingCooldown === 0 &&
+             a.matingWith === null && b.matingWith === null
         ) {
-        a.matingCooldown = 100;
-        b.matingCooldown = 100;
 
-        const offspring = new Ember(
-            (a.x + b.x) / 2,
-            (a.y + b.y) / 2,
-            a,
-            b
-        );
-    embers.push(offspring);
+            a.matingWith  = b;
+            b.matingWith = a;
+            const targetDist = a.radius + b.radius;
+            b.x = a.x - dx / distance * targetDist;
+            b.y = a.y - dy / distance * targetDist;
+
+    //     a.matingCooldown = 100;
+    //     b.matingCooldown = 100;
+    //     const offspring = new Ember(
+    //         (a.x + b.x) / 2,
+    //         (a.y + b.y) / 2,
+    //         a,
+    //         b
+    //     );
+    // embers.push(offspring);
 
         }
     }

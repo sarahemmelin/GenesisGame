@@ -117,6 +117,10 @@ born (tiny)
 - [x] Speed tied to radius (smaller = faster)
 - [ ] Implement saturation and glow in `draw()`
 - [ ] Add mating visual (embers stick together briefly)
+  - [x] Embers snap edge-to-edge on mating (`matingWith` property)
+  - [ ] Wiggle animation while mating
+  - [ ] `matingTimer` counts to 600 ticks, then spawns offspring
+  - [ ] Embers separate after mating
 - [ ] Add population counter UI
 - [x] Detect color fixation (all embers same color) → trigger lose condition
 
