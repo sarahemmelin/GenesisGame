@@ -46,6 +46,13 @@ Color is decided by THREE genes working together:
 
 Each gene has two alleles (diploid). Alleles blend by strength — no simple dominant/recessive. This architecture also supports co-dominance and epistasis later without refactoring.
 
+### Flicker gene (epistasis)
+- `flickerAlleles` — two alleles, value is 0.0–1.0
+- Blended strength = mutation probability at birth
+- If triggered: one random channel (`r`, `g`, or `b`) of the ember's blended color is zeroed out permanently
+- This is epistasis — the flicker gene suppresses expression of the color gene
+- Everyone carries it; high strength = higher chance of color suppression
+
 ### Size gene
 - Founding values: `'large'` and `'small'` only (defined in `constants.mjs`)
 - `'medium'` is **not a founding value** — it emerges naturally through blending
@@ -60,11 +67,10 @@ Each gene has two alleles (diploid). Alleles blend by strength — no simple dom
 ---
 
 ## Lifecycle
-
 ```
-born (tiny)
+born (tiny) (not implemented)
   → growing phase (visual: ember grows to its allele-determined size)
-  → mature (~1 minute)
+  → mature (5 seconds (can be tweaked))
   → can mate
   → ages
   → dies (lifespan decided by size allele)
@@ -106,7 +112,9 @@ born (tiny)
 
 - [ ] Add guard clauses to `Allele` constructor
 - [ ] Add mutation trigger when strength < 0.1
+- [ ] Add `flickerAlleles` — epistatic gene that suppresses one rgb channel   at birth
 - [ ] Decide sterility percentage
+- [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting
 - [x] Build `draw()` method on Ember
 - [x] Build `update()` method on Ember
 - [x] Design mating / reproduction system
@@ -115,12 +123,13 @@ born (tiny)
 - [x] Size alleles resolve to radius — blended by strength
 - [x] Lifespan tied to radius (larger = longer)
 - [x] Speed tied to radius (smaller = faster)
+- [ ] Mating cooldown tied to radius (larger = longer cooldown)
 - [ ] Implement saturation and glow in `draw()`
-- [ ] Add mating visual (embers stick together briefly)
+- [x] Add mating visual (embers stick together briefly)
   - [x] Embers snap edge-to-edge on mating (`matingWith` property)
-  - [ ] Wiggle animation while mating
-  - [ ] `matingTimer` counts to 600 ticks, then spawns offspring
-  - [ ] Embers separate after mating
+  - [x] Wiggle animation while mating (male wiggles, female stays still)
+  - [x] `matingTimer` counts to 600 ticks, then spawns offspring
+  - [x] Embers separate after mating
 - [ ] Add population counter UI
 - [x] Detect color fixation (all embers same color) → trigger lose condition
 

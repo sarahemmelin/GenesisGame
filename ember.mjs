@@ -43,6 +43,13 @@ class Ember {
                 new Allele(glowFromB.gene, glowFromB.value, glowFromB.strength)
             ];
 
+            const flickerAlleleFromA = parentA.flickerAlleles[Math.floor(Math.random() * 2)];
+            const flickerAlleleFromB = parentB.flickerAlleles[Math.floor(Math.random() * 2)];
+            this.flickerAlleles = [
+                new Allele(flickerAlleleFromA.gene, flickerAlleleFromA.value, flickerAlleleFromA.strength),
+                new Allele(flickerAlleleFromB.gene, flickerAlleleFromB.value, flickerAlleleFromB.strength)
+            ];
+
         } else {
         this.sizeAlleles = [
             new Allele('baseSize', 
@@ -67,28 +74,41 @@ class Ember {
             new Allele('baseGlow', Math.random()),
             new Allele('baseGlow', Math.random())
         ];
+
+        this.flickerAlleles = [
+            new Allele('baseFlicker', Math.random()),
+            new Allele('baseFlicker', Math.random())
+        ];
         }
 
         const size1 = SIZES[this.sizeAlleles[0].value];
         const size2 = SIZES[this.sizeAlleles[1].value];
         this.radius = (size1 * this.sizeAlleles[0].strength + size2 * this.sizeAlleles[1].strength) / (this.sizeAlleles[0].strength + this.sizeAlleles[1].strength);
         this.lifespan = this.radius * 300;
-        this.vx = ((Math.random() -0.5) * (30/ this.radius));
-        this.vy = ((Math.random() -0.5) * (30/ this.radius));
-    }
-
-
-    draw(ctx){
         const allele1 = this.colorAlleles[0];
         const allele2 = this.colorAlleles[1];
         const rgb1 = BASE_COLORS[allele1.value];
         const rgb2 = BASE_COLORS[allele2.value];
 
-        const r = (rgb1.r * allele1.strength + rgb2.r * allele2.strength) / (allele1.strength + allele2.strength);
-        const g = (rgb1.g * allele1.strength + rgb2.g * allele2.strength) / (allele1.strength + allele2.strength);
-        const b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / (allele1.strength + allele2.strength);
-        
-        const color = `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+        this.r = (rgb1.r * allele1.strength + rgb2.r * allele2.strength) / (allele1.strength + allele2.strength);
+        this.g = (rgb1.g * allele1.strength + rgb2.g * allele2.strength) / (allele1.strength + allele2.strength);
+        this.b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / (allele1.strength + allele2.strength);
+
+        const flickerStrength = (this.flickerAlleles[0].strength + this.flickerAlleles[1].strength) / 2;
+        if (Math.random() < flickerStrength) {
+            const channels = ['r', 'g', 'b'];
+            const channel = channels[Math.floor(Math.random() * 3)];
+            this[channel] = 0;
+        }
+
+
+        this.vx = ((Math.random() -0.5) * (40/ this.radius));
+        this.vy = ((Math.random() -0.5) * (40/ this.radius));
+    }
+
+
+    draw(ctx){    
+        const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
 
         ctx.shadowColor = color;
         ctx.shadowBlur = 20;
