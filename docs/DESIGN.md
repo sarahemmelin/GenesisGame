@@ -112,7 +112,7 @@ born (tiny) (not implemented)
 
 - [ ] Add guard clauses to `Allele` constructor
 - [ ] Add mutation trigger when strength < 0.1
-- [ ] Add `flickerAlleles` — epistatic gene that suppresses one rgb channel   at birth
+- [x] Add `flickerAlleles` — epistatic gene that suppresses one rgb channel at birth
 - [ ] Decide sterility percentage
 - [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting
 - [x] Build `draw()` method on Ember
