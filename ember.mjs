@@ -5,15 +5,17 @@ class Ember {
     constructor(x,y, parentA = null, parentB = null){
         const colorKeys = Object.keys(BASE_COLORS);
         const sizeKeys = Object.keys(SIZES);
+
+//--- Position and lifecycle ---
         this.x = x;
         this.y = y;
-       
         this.age = 0;
         this.matingCooldown = 300;
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
         this.matingWith = null;
         this.matingTimer = 0;
 
+//--- Alleles (inherited or born with) ---
         if (parentA !== null && parentB !== null){
             const colorFromA = parentA.colorAlleles[Math.floor(Math.random() * 2)];
             const colorFromB = parentB.colorAlleles[Math.floor(Math.random() * 2)];
@@ -81,10 +83,13 @@ class Ember {
         ];
         }
 
+//--- Resolve radius and lifespan from size alleles ---
         const size1 = SIZES[this.sizeAlleles[0].value];
         const size2 = SIZES[this.sizeAlleles[1].value];
         this.radius = (size1 * this.sizeAlleles[0].strength + size2 * this.sizeAlleles[1].strength) / (this.sizeAlleles[0].strength + this.sizeAlleles[1].strength);
         this.lifespan = this.radius * 300;
+
+//--- Resove color (r,g,b) from color alleles ---
         const allele1 = this.colorAlleles[0];
         const allele2 = this.colorAlleles[1];
         const rgb1 = BASE_COLORS[allele1.value];
@@ -94,6 +99,7 @@ class Ember {
         this.g = (rgb1.g * allele1.strength + rgb2.g * allele2.strength) / (allele1.strength + allele2.strength);
         this.b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / (allele1.strength + allele2.strength);
 
+//--- Flicker epistatis (chance to zero out one color channel at spawn) --- 
         const flickerStrength = (this.flickerAlleles[0].strength + this.flickerAlleles[1].strength) / 2;
         if (Math.random() < flickerStrength) {
             const channels = ['r', 'g', 'b'];
@@ -101,12 +107,12 @@ class Ember {
             this[channel] = 0;
         }
 
-
+//--- Velocity (smaller = faster) --- 
         this.vx = ((Math.random() -0.5) * (40/ this.radius));
         this.vy = ((Math.random() -0.5) * (40/ this.radius));
     }
 
-
+//=== Functions ====== 
     draw(ctx){    
         const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
 

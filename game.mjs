@@ -1,22 +1,22 @@
 import Ember from "./ember.mjs";
 
+//--- Canvas setup ---
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let mouseX = 0;
-let mouseY = 0;
-
-let draggedEmber = null;
-
+//--- Start screen ---
 const startScreen = document.getElementById('start-screen');
     document.getElementById('start-button').addEventListener('click', () => {
     startScreen.style.display = 'none';
     requestAnimationFrame(gameLoop);
 });
 
+// --- Mouse tracking and drag (the god haaaand) ---
+let mouseX = 0;
+let mouseY = 0;
+let draggedEmber = null;
 
 canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -46,10 +46,10 @@ for (let i = 0; i < 10; i++){
 }
 
 function gameLoop(){
+//--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     embers = embers.filter(ember => ember.age < ember.lifespan);
 
-    //Adding the "game over" part:
     if (embers.length === 0) {
         ctx.fillStyle = 'red';
         ctx.font = 'bold 72px serif';
@@ -63,6 +63,7 @@ function gameLoop(){
         embers.length = 50;
     }
 
+//--- Mating detection --- 
     for (let i = 0; i < embers.length; i++) {
     for (let j = i + 1; j < embers.length; j++) {
         const a = embers[i];
@@ -88,6 +89,7 @@ function gameLoop(){
         }
     }
     }
+    //--- After mating: Spawn offspring + separate embers ---
     embers.forEach(ember => {
     if (ember.gender === 'male' && ember.matingTimer >= 600) {
         const roll = Math.random();
@@ -122,6 +124,7 @@ function gameLoop(){
     }
 });
 
+//--- Update and draw all embers ---
     embers.forEach(ember => {
         ember.update(canvas.width, canvas.height);
         ember.draw(ctx);       
