@@ -112,19 +112,17 @@ class Ember {
         this.vy = ((Math.random() -0.5) * (40/ this.radius));
     }
 
+
 //=== Functions ====== 
     draw(ctx){    
         const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
-
         ctx.shadowColor = color;
         ctx.shadowBlur = 20;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        const displayRadius = this.age < 600 ? 5 + (this.radius - 5) * (this.age / 600) : this.radius;
+        ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
-
-
-
     }
 
     update(width, height){
@@ -134,7 +132,7 @@ class Ember {
             const distanceY = this.y - this.matingWith.y;
             const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
             const targetDist = this.radius + this.matingWith.radius;
-            const stretch = Math.sin(this.matingTimer * 0.1) * 3;
+            const stretch = Math.sin(this.matingTimer * 3 / this.radius) * 3;
             
             this.x = this.matingWith.x + distanceX / distance * (targetDist + stretch);
             this.y = this.matingWith.y + distanceY / distance * (targetDist + stretch);

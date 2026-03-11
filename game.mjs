@@ -76,7 +76,7 @@ function gameLoop(){
         if (
             distance < 50 &&
             a.gender !== b.gender &&
-            a.age > 100 && b.age > 100 &&
+            a.age > 600 && b.age > 600 &&
             a.matingCooldown === 0 && b.matingCooldown === 0 &&
              a.matingWith === null && b.matingWith === null
         ) {
@@ -135,14 +135,15 @@ function gameLoop(){
     ctx.fillText('← GOD', mouseX + 40, mouseY);
 
     //Fixation
-    const dominant = ember => ember.colorAlleles[0].strength >= ember.colorAlleles[1].strength
-    ? ember.colorAlleles[0].value
-    : ember.colorAlleles[1].value;
+    const collectAlleleColors = [];
+    embers.forEach(ember => {
+       collectAlleleColors.push(ember.colorAlleles[0].value);
+       collectAlleleColors.push(ember.colorAlleles[1].value);
+    })
 
-    const firstColor = dominant(embers[0]);
+    const firstColor = collectAlleleColors[0];
+    const isFixed = collectAlleleColors.every(value => value === firstColor);
 
-    const isFixed = embers.every(ember =>
-        dominant(ember) === firstColor);
 
     if (isFixed && embers.length >= 10){
         ctx.fillStyle = 'orange';
