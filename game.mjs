@@ -26,7 +26,7 @@ let epistasisCard = 0;
 
 // --- popups --- 
 const epistasisCards = [
-    "Something unusual just happened. One of the newborn Embers doesn't look like its parents.",
+    "Something just happened. An unusual ember was born. Can you find it?",
     "The allele (gene) pool clearly says one thing, but its physical color says another.",
     "This is called epistasis. One gene can turn off another. The color is still there, just not showing. This is why appearance alone can't tell you what genes a creature carries."
 ];
@@ -37,10 +37,18 @@ canvas.addEventListener('mousemove', (e) => {
     if (draggedEmber) {
         draggedEmber.x = mouseX;
         draggedEmber.y = mouseY;
-}
+        if (showEpistasisPopup) gameLoop();
+    }
 });
 
 canvas.addEventListener('mousedown', (e) => {
+        if (showEpistasisPopup) {
+        const de = selectedEmber;
+        if (de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5) {
+            draggedEmber = de;
+        }
+        return;
+    }
     draggedEmber = embers.find(ember => {
         const dx = ember.x - e.clientX;
         const dy = ember.y - e.clientY;
@@ -93,6 +101,12 @@ for (let i = 0; i < 10; i++){
 function gameLoop(){
 //--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (showEpistasisPopup) {
+        embers.forEach(ember => ember.draw(ctx));
+        drawEpistasisPopup();
+    return;
+    }
+
     embers = embers.filter(ember => ember.age < ember.lifespan);
 
     if (embers.length === 0) {
@@ -270,6 +284,7 @@ function gameLoop(){
 
 function drawEpistasisPopup(){
     console.log(selectedEmber);
+    ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     if (selectedEmber) selectedEmber.draw(ctx);
