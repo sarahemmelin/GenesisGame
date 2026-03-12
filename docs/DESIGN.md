@@ -130,6 +130,9 @@ born (tiny) (not implemented)
   - [x] Wiggle animation while mating (male wiggles, female stays still)
   - [x] `matingTimer` counts to 600 ticks, then spawns offspring
   - [x] Embers separate after mating
+- [x] Add gender to ember info panel
+- [x] Add right-side population panel (total count, alleles expressed in population)
+- [ ] Decrease flicker ratio + add epistasis popup with game freeze on first flicker event
 - [ ] Add population counter UI
 - [x] Detect color fixation (all embers same color) → trigger lose condition
 

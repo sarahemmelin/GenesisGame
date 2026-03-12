@@ -16,6 +16,7 @@ const startScreen = document.getElementById('start-screen');
 // --- Mouse tracking and drag (the god haaaand) ---
 let mouseX = 0;
 let mouseY = 0;
+let selectedEmber = null;
 let draggedEmber = null;
 
 canvas.addEventListener('mousemove', (e) => {
@@ -33,6 +34,7 @@ canvas.addEventListener('mousedown', (e) => {
         const dy = ember.y - e.clientY;
         return Math.sqrt(dx * dx + dy * dy) < 15;
     });
+    selectedEmber = draggedEmber;
 });
 
 canvas.addEventListener('mouseup', () => {
@@ -83,9 +85,14 @@ function gameLoop(){
 
             a.matingWith  = b;
             b.matingWith = a;
+            
             const targetDist = a.radius + b.radius;
             b.x = a.x - dx / distance * targetDist;
             b.y = a.y - dy / distance * targetDist;
+
+            if (draggedEmber === a || draggedEmber === b) {
+                draggedEmber = null;
+            }
         }
     }
     }
@@ -126,7 +133,9 @@ function gameLoop(){
 
 //--- Update and draw all embers ---
     embers.forEach(ember => {
-        ember.update(canvas.width, canvas.height);
+        if (ember !== draggedEmber){
+            ember.update(canvas.width, canvas.height);
+        }
         ember.draw(ctx);       
     })
 
@@ -141,9 +150,27 @@ function gameLoop(){
        collectAlleleColors.push(ember.colorAlleles[1].value);
     })
 
+    const alleleCounts = {};
+        collectAlleleColors.forEach(color => {
+        alleleCounts[color] = (alleleCounts[color] || 0) + 1;
+    });
+
+    let flickerTotal = 0;
+    embers.forEach(ember => {
+        flickerTotal += (ember.flickerAlleles[0].strength + ember.flickerAlleles[1].strength) / 2;
+    });
+    const avgFlicker = flickerTotal / embers.length;
+
+    let sizeTotal = 0;
+    embers.forEach(ember => {
+        sizeTotal += ember.radius;
+    });
+    const avgSize = sizeTotal / embers.length;
+
+
     const firstColor = collectAlleleColors[0];
     const isFixed = collectAlleleColors.every(value => value === firstColor);
-
+    
 
     if (isFixed && embers.length >= 10){
         ctx.fillStyle = 'orange';
@@ -152,6 +179,45 @@ function gameLoop(){
         ctx.fillText('FIXATION', canvas.width / 2, canvas.height / 2);
         return;
     }
+
+    //=== UI ===
+    // Left-side single ember panel
+    if (selectedEmber) {
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
+    ctx.shadowBlur = 20;
+    ctx.fillRect(10, 10, 200, 100);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'white';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, 20, 30);
+    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, 20, 50);
+    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, 20, 70);
+    ctx.fillText(`Gender: ${selectedEmber.gender}`, 20, 90);
+}   
+
+    // Right-side population panel
+    ctx.shadowBlur = 0;
+    const panelWidth = 220;
+    const panelX = canvas.width - panelWidth - 10;
+    let panelY = 10;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(panelX, panelY, panelWidth, 110 + Object.keys(alleleCounts).length * 20);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Population: ${embers.length}`, panelX + 10, panelY + 20);
+
+    ctx.fillText(`Allele pool:`, panelX + 10, panelY + 40);
+    Object.entries(alleleCounts).forEach(([color, count], i) => {
+        ctx.fillText(`${color}: ${count}`, panelX + 30, panelY + 60 + i * 20);
+    });
+
+    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
+    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
 
 
 
