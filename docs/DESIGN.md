@@ -135,8 +135,9 @@ born (tiny) (not implemented)
 - [x] Decrease flicker ratio + add epistasis popup with game freeze on first flicker event
 - [x] Add population counter UI
 - [x] Detect color fixation (all embers same color) → trigger lose condition
-- [ ] Add gender counter to the UI
+- [x] Add gender counter to the UI
 - [ ] Add intro popup when founding embers reach maturity (explain diploid, allele strength, silent alleles, invite player to inspect)
 - [x] Fix epistasis popup: bonus card formatting, ember drawn on top of all panels when dragged
 - [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
+  - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
 

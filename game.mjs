@@ -20,11 +20,11 @@ let selectedEmber = null;
 let draggedEmber = null;
 const navY = canvas.height * 0.70;
 
-// --- flags ---
+// --- flags and references ---
 let epistasisSeen = false;
+let epistasisEmber = null;
 let showEpistasisPopup = false;
 let epistasisCard = 0;
-let epistasisBonusUnlocked = false;
 let showBonusCard = false;
 let introSeen = false;
 let showIntroPopup = false;
@@ -54,7 +54,6 @@ canvas.addEventListener('mousemove', (e) => {
     if (draggedEmber) {
         draggedEmber.x = mouseX;
         draggedEmber.y = mouseY;
-        if (showEpistasisPopup) gameLoop();
     }
 });
 
@@ -107,16 +106,13 @@ canvas.addEventListener('click', (e) => {
         const closeY = canvas.height / 2 + 100;
         if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) {
             showBonusCard = false;
-            gameLoop();
         }
     return;
     }
 
 
         if (onEmber) {
-            epistasisBonusUnlocked = true;
             showBonusCard = true;
-            gameLoop();
             return;
         }
         const cx = canvas.width / 2;
@@ -127,14 +123,12 @@ canvas.addEventListener('click', (e) => {
 
         if (clickedBack) {
             epistasisCard--;
-            gameLoop();
+
         } else if (clickedForward) {
             epistasisCard++;
-            gameLoop();
         } else if (epistasisCard === epistasisCards.length - 1) {
             showEpistasisPopup = false;
             epistasisCard = 0;
-            requestAnimationFrame(gameLoop);
         }
     }
 });
@@ -149,11 +143,13 @@ for (let i = 0; i < 10; i++){
 function gameLoop(){
 //--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (showEpistasisPopup) {
-        embers.forEach(ember => ember.draw(ctx));
-        drawEpistasisPopup();
+if (showEpistasisPopup) {
+    embers.forEach(ember => ember.draw(ctx));
+    drawEpistasisPopup();
+    requestAnimationFrame(gameLoop);
     return;
-    }
+}
+
 
     embers = embers.filter(ember => ember.age < ember.lifespan);
 
@@ -240,6 +236,7 @@ function gameLoop(){
 
             if (offspring.flickeredChannel !== null && !epistasisSeen) {
                 epistasisSeen = true;
+                epistasisEmber = offspring;
                 showEpistasisPopup = true;
                 selectedEmber = offspring;
             }
@@ -264,9 +261,9 @@ function gameLoop(){
         ember.draw(ctx);       
     })
 
-    ctx.fillStyle = 'white';
-    ctx.font = '12px serif';
-    ctx.fillText('← GOD', mouseX + 40, mouseY);
+    // ctx.fillStyle = 'white';
+    // ctx.font = '12px serif';
+    // ctx.fillText('← GOD', mouseX + 40, mouseY);
 
     //Fixation
     const collectAlleleColors = [];
@@ -331,12 +328,6 @@ function gameLoop(){
     ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
     ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
 
-    //--- Epistasispopup --- 
-    if (showEpistasisPopup){
-        drawEpistasisPopup();
-        return;
-    }
-
     requestAnimationFrame(gameLoop);
 }
 
@@ -344,10 +335,10 @@ function gameLoop(){
 //=== Functions === 
 
 function drawEpistasisPopup(){
-    console.log(selectedEmber);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     ctx.fillStyle = 'white';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
@@ -373,7 +364,19 @@ function drawEpistasisPopup(){
     if (selectedEmber) {
         selectedEmber.draw(ctx);
     }
+        if (epistasisEmber && !showBonusCard) {
+        const pulse = 50 + Math.sin(Date.now() / 300) * 15;
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = pulse;
+        ctx.beginPath();
+        ctx.arc(epistasisEmber.x, epistasisEmber.y, epistasisEmber.displayRadius + 15, 0, Math.PI * 2);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
 }
+
 
 function drawIntroPopup() {
     ctx.shadowBlur = 0;
