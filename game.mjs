@@ -18,6 +18,7 @@ let mouseX = 0;
 let mouseY = 0;
 let selectedEmber = null;
 let draggedEmber = null;
+const navY = canvas.height * 0.70;
 
 // --- flags ---
 let epistasisSeen = false;
@@ -25,13 +26,27 @@ let showEpistasisPopup = false;
 let epistasisCard = 0;
 let epistasisBonusUnlocked = false;
 let showBonusCard = false;
+let introSeen = false;
+let showIntroPopup = false;
+let introCard = 0;
 
-// --- popups --- 
+// === popups ===
+// --- epistasiscards --- 
 let epistasisCards = [
     "Something just happened. An unusual ember was born. Can you find it?",
     "Even though the color alleles inherited from its parents did not change, a separate gene, 'the flicker gene', switched one color channel off at birth.",
     "This is called epistasis. One gene can silence another. The color is still in the DNA, just not showing. This is why appearance alone can't tell you what genes a creature carries."
 ];
+
+// --- introcards --- 
+const introCards = [
+    "This is an Ember. It's a tiny creature living in your petri dish.",
+    "These Embers are diploid, meaning each carries two color alleles, one inherited from each parent.",
+    "Each allele has a strength, how loudly it expresses. Here, blue (0.70) dominates gold (0.30), blending into green. The stronger allele expresses itself louder.",
+    "An allele with strength 0.00 is still there, just 'silent'. It can be passed on and grow stronger in future generations.",
+    "Click any Ember to inspect its genes. Then watch what happens when they meet."
+];
+
 
 canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -65,6 +80,24 @@ canvas.addEventListener('mouseup', () => {
 });
 
 canvas.addEventListener('click', (e) => {
+    if (showIntroPopup) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
+        const clickedForward = introCard < introCards.length - 1 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
+
+        if (clickedBack) {
+            introCard--;
+        } else if (clickedForward) {
+            introCard++;
+        } else if (introCard === introCards.length - 1) {
+            showIntroPopup = false;
+            introCard = 0;
+        }
+    return;
+}
+
+
     if (showEpistasisPopup) {
         const de = selectedEmber;
         const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
@@ -123,6 +156,19 @@ function gameLoop(){
     }
 
     embers = embers.filter(ember => ember.age < ember.lifespan);
+
+    if (!introSeen && embers.every(ember => ember.age >= 600)) {
+        introSeen = true;
+        showIntroPopup = true;
+    }
+
+    if (showIntroPopup) {
+        embers.forEach(ember => ember.draw(ctx));
+        drawIntroPopup();
+        requestAnimationFrame(gameLoop);
+    return;
+    }
+
 
     if (embers.length === 0) {
         ctx.fillStyle = 'red';
@@ -307,9 +353,8 @@ function drawEpistasisPopup(){
     ctx.textAlign = 'center';
     ctx.fillText('EPISTASIS!', canvas.width / 2, canvas.height / 2 - 80);
     ctx.font = '16px sans-serif';
-    
     wrapText(ctx, epistasisCards[epistasisCard], canvas.width / 2, canvas.height / 2, 500, 28);
-    //ctx.fillText(epistasisCards[epistasisCard], canvas.width / 2, canvas.height / 2);
+    
     if (epistasisCard > 0) {
         ctx.fillText('◀', canvas.width / 2 - 200, canvas.height / 2 + 80);
     }
@@ -319,7 +364,7 @@ function drawEpistasisPopup(){
         ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
     }
     ctx.fillText(`${epistasisCard + 1} / ${epistasisCards.length}`, canvas.width / 2, canvas.height / 2 + 110);
-    
+
     drawEmberInfoPanel();
 
     if (showBonusCard){
@@ -328,6 +373,82 @@ function drawEpistasisPopup(){
     if (selectedEmber) {
         selectedEmber.draw(ctx);
     }
+}
+
+function drawIntroPopup() {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('GENESIS: EMBER', canvas.width / 2, canvas.height / 2 - 120);
+
+    if (introCard === 0 || introCard === 1 || introCard === 2 || introCard === 3) {
+        // Ember diagram
+        const ex = canvas.width / 2 - 150;
+        const ey = canvas.height / 2;
+        const er = 20;
+        const color = introCard === 3 ? 'rgb(0, 180, 216)' : 'rgb(58, 157, 78)';
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 35 + Math.sin(Date.now() /  300) * 15;
+        ctx.beginPath();
+        ctx.arc(ex, ey, er, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Allele labels only on cards 1 and 2
+    if (introCard === 1 || introCard === 2 || introCard === 3) {
+        ctx.font = '13px monospace';
+        ctx.textAlign = 'left';
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'rgb(0, 180, 216)';
+        ctx.beginPath();
+        ctx.arc(ex + er + 16, ey - 12, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        const blueLabel = introCard === 3 ? 'Allele 1: blue (1.00)' : 'Allele 1: blue (0.70)';
+        ctx.fillText(blueLabel, ex + er + 26, ey - 8);
+        ctx.fillStyle = introCard === 3 ? 'rgb(100, 85, 0)' : 'rgb(255, 215, 0)';
+        ctx.beginPath();
+        ctx.arc(ex + er + 16, ey + 8, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        const goldLabel = introCard === 3 ? 'Allele 2: gold (0.00)' : 'Allele 2: gold (0.30)';
+        ctx.fillText(goldLabel, ex + er + 26, ey + 12);
+    }
+
+
+        // Right column: card text
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'white';
+        ctx.font = '16px sans-serif';
+        wrapText(ctx, introCards[introCard], canvas.width / 2 + 80, canvas.height / 2 - 20, 220, 28);
+    } else {
+        ctx.font = '16px sans-serif';
+        wrapText(ctx, introCards[introCard], canvas.width / 2, canvas.height / 2, 500, 28);
+    }
+    ctx.textAlign = 'center';
+    ctx.font = '28px sans-serif';
+    ctx.shadowColor = 'white';
+    ctx.shadowBlur = 10;
+    if (introCard > 0) {
+        ctx.fillText('◀', canvas.width / 2 - 200, navY);
+    }
+    if (introCard < introCards.length - 1) {
+        ctx.fillText('▶', canvas.width / 2 + 280, navY);
+    } else {
+        ctx.shadowBlur = 0;
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Click anywhere to continue.', canvas.width / 2, navY - 30);
+    }
+    ctx.shadowBlur = 0;
+    ctx.font = '16px sans-serif';
+    ctx.fillText(`${introCard + 1} / ${introCards.length}`, canvas.width / 2, navY );
+
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -345,6 +466,7 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     });
     ctx.fillText(line, x, y);
 }
+
 
 function drawEmberInfoPanel(){
  if (!selectedEmber) {
