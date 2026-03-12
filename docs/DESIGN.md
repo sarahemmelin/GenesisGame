@@ -136,4 +136,7 @@ born (tiny) (not implemented)
 - [x] Add population counter UI
 - [x] Detect color fixation (all embers same color) → trigger lose condition
 - [ ] Add gender counter to the UI
+- [ ] Add intro popup when founding embers reach maturity (explain diploid, allele strength, silent alleles, invite player to inspect)
+- [x] Fix epistasis popup: bonus card formatting, ember drawn on top of all panels when dragged
+- [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
 

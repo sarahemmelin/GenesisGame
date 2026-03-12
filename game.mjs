@@ -13,22 +13,24 @@ const startScreen = document.getElementById('start-screen');
     requestAnimationFrame(gameLoop);
 });
 
-// --- Mouse tracking and drag (the god haaaand) ---
+// --- Stats ---
 let mouseX = 0;
 let mouseY = 0;
-
-// --- flags ---
 let selectedEmber = null;
 let draggedEmber = null;
+
+// --- flags ---
 let epistasisSeen = false;
 let showEpistasisPopup = false;
 let epistasisCard = 0;
+let epistasisBonusUnlocked = false;
+let showBonusCard = false;
 
 // --- popups --- 
-const epistasisCards = [
+let epistasisCards = [
     "Something just happened. An unusual ember was born. Can you find it?",
-    "The allele (gene) pool clearly says one thing, but its physical color says another.",
-    "This is called epistasis. One gene can turn off another. The color is still there, just not showing. This is why appearance alone can't tell you what genes a creature carries."
+    "Even though the color alleles inherited from its parents did not change, a separate gene, 'the flicker gene', switched one color channel off at birth.",
+    "This is called epistasis. One gene can silence another. The color is still in the DNA, just not showing. This is why appearance alone can't tell you what genes a creature carries."
 ];
 
 canvas.addEventListener('mousemove', (e) => {
@@ -67,7 +69,20 @@ canvas.addEventListener('click', (e) => {
         const de = selectedEmber;
         const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
 
+    if (showBonusCard) {
+        const closeX = canvas.width / 2;
+        const closeY = canvas.height / 2 + 100;
+        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) {
+            showBonusCard = false;
+            gameLoop();
+        }
+    return;
+    }
+
+
         if (onEmber) {
+            epistasisBonusUnlocked = true;
+            showBonusCard = true;
             gameLoop();
             return;
         }
@@ -287,7 +302,6 @@ function drawEpistasisPopup(){
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (selectedEmber) selectedEmber.draw(ctx);
     ctx.fillStyle = 'white';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
@@ -305,8 +319,16 @@ function drawEpistasisPopup(){
         ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
     }
     ctx.fillText(`${epistasisCard + 1} / ${epistasisCards.length}`, canvas.width / 2, canvas.height / 2 + 110);
+    
     drawEmberInfoPanel();
+
+    if (showBonusCard){
+        drawBonusCard();
     }
+    if (selectedEmber) {
+        selectedEmber.draw(ctx);
+    }
+}
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
@@ -343,3 +365,22 @@ function drawEmberInfoPanel(){
       
 }
 
+function drawBonusCard() {
+    const de = selectedEmber;
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(canvas.width / 2 - 250, canvas.height / 2 - 130, 500, 260);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('You found it!', canvas.width / 2, canvas.height / 2 - 90);
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    const x = canvas.width / 2 - 220;
+    ctx.fillText(`Allele 1: ${de.colorAlleles[0].value} (${de.colorAlleles[0].strength.toFixed(2)})`, x, canvas.height / 2 - 55);
+    ctx.fillText(`Allele 2: ${de.colorAlleles[1].value} (${de.colorAlleles[1].strength.toFixed(2)})`, x, canvas.height / 2 - 30);
+    ctx.fillText(`RGB: ${Math.round(de.r)}, ${Math.round(de.g)}, ${Math.round(de.b)}`, x, canvas.height / 2 - 5);
+    ctx.fillText(`Flickered: ${de.flickeredChannel}`, x, canvas.height / 2 + 20);
+    ctx.fillText(`Gender: ${de.gender}`, x, canvas.height / 2 + 45);
+    ctx.textAlign = 'center';
+    ctx.fillText('[ Close ]', canvas.width / 2, canvas.height / 2 + 100);
+}
