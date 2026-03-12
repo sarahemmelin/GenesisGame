@@ -16,10 +16,20 @@ const startScreen = document.getElementById('start-screen');
 // --- Mouse tracking and drag (the god haaaand) ---
 let mouseX = 0;
 let mouseY = 0;
+
+// --- flags ---
 let selectedEmber = null;
 let draggedEmber = null;
 let epistasisSeen = false;
 let showEpistasisPopup = false;
+let epistasisCard = 0;
+
+// --- popups --- 
+const epistasisCards = [
+    "Something unusual just happened. One of the newborn Embers doesn't look like its parents.",
+    "The allele (gene) pool clearly says one thing, but its physical color says another.",
+    "This is called epistasis. One gene can turn off another. The color is still there, just not showing. This is why appearance alone can't tell you what genes a creature carries."
+];
 
 canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
@@ -36,19 +46,44 @@ canvas.addEventListener('mousedown', (e) => {
         const dy = ember.y - e.clientY;
         return Math.sqrt(dx * dx + dy * dy) < 15;
     });
-    selectedEmber = draggedEmber;
+    if (draggedEmber) selectedEmber = draggedEmber;
 });
+
 
 canvas.addEventListener('mouseup', () => {
     draggedEmber = null;
 });
 
-canvas.addEventListener('click', () => {
+canvas.addEventListener('click', (e) => {
     if (showEpistasisPopup) {
-        showEpistasisPopup = false;
-        requestAnimationFrame(gameLoop);
+        const de = selectedEmber;
+        const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
+
+        if (onEmber) {
+            gameLoop();
+            return;
+        }
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        const clickedBack = epistasisCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
+        const clickedForward = epistasisCard < epistasisCards.length - 1 && Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
+
+        if (clickedBack) {
+            epistasisCard--;
+            gameLoop();
+        } else if (clickedForward) {
+            epistasisCard++;
+            gameLoop();
+        } else if (epistasisCard === epistasisCards.length - 1) {
+            showEpistasisPopup = false;
+            epistasisCard = 0;
+            requestAnimationFrame(gameLoop);
+        }
     }
 });
+
+
 
 let embers = [];
 for (let i = 0; i < 10; i++){
@@ -197,20 +232,7 @@ function gameLoop(){
 
     //=== UI ===
     // Left-side single ember panel
-    if (selectedEmber) {
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
-    ctx.shadowBlur = 20;
-    ctx.fillRect(10, 10, 200, 100);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'white';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, 20, 30);
-    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, 20, 50);
-    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, 20, 70);
-    ctx.fillText(`Gender: ${selectedEmber.gender}`, 20, 90);
-    }   
+   drawEmberInfoPanel();
 
     // Right-side population panel
     ctx.shadowBlur = 0;
@@ -235,22 +257,74 @@ function gameLoop(){
     ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
 
     //--- Epistasispopup --- 
-    if (showEpistasisPopup) {
-        ctx.fillStyle = 'rgba(0,0,0,0.85)';
-        ctx.fillRect(canvas.width / 2 - 300, canvas.height / 2 - 150, 600, 300);
-        ctx.fillStyle = 'white';
-        ctx.font = 'bold 22px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('EPISTASIS!', canvas.width / 2, canvas.height / 2 - 80);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('A newborn ember looks different from what its genes would suggest.', canvas.width / 2, canvas.height / 2 - 40);
-        ctx.fillText('One of its color genes was switched off by another gene: the flicker gene.', canvas.width / 2, canvas.height / 2 - 10);
-        ctx.fillText("The color is \"in there\", but it isn't being expressed.", canvas.width / 2, canvas.height / 2 + 20);
-        ctx.fillText('This is called epistasis: when one gene silences another.', canvas.width / 2, canvas.height / 2 + 50);
-        ctx.fillText("It's why genetics isn't as simple as a Punnett square.", canvas.width / 2, canvas.height / 2 + 75);
-        ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 115);
-    return;
-}
+    if (showEpistasisPopup){
+        drawEpistasisPopup();
+        return;
+    }
 
     requestAnimationFrame(gameLoop);
 }
+
+
+//=== Functions === 
+
+function drawEpistasisPopup(){
+    console.log(selectedEmber);
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (selectedEmber) selectedEmber.draw(ctx);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('EPISTASIS!', canvas.width / 2, canvas.height / 2 - 80);
+    ctx.font = '16px sans-serif';
+    
+    wrapText(ctx, epistasisCards[epistasisCard], canvas.width / 2, canvas.height / 2, 500, 28);
+    //ctx.fillText(epistasisCards[epistasisCard], canvas.width / 2, canvas.height / 2);
+    if (epistasisCard > 0) {
+        ctx.fillText('◀', canvas.width / 2 - 200, canvas.height / 2 + 80);
+    }
+    if (epistasisCard < epistasisCards.length - 1) {
+        ctx.fillText('▶', canvas.width / 2 + 200, canvas.height / 2 + 80);
+    } else {
+        ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
+    }
+    ctx.fillText(`${epistasisCard + 1} / ${epistasisCards.length}`, canvas.width / 2, canvas.height / 2 + 110);
+    drawEmberInfoPanel();
+    }
+
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    words.forEach(word => {
+        const testLine = line + word + ' ';
+        if (ctx.measureText(testLine).width > maxWidth && line !== '') {
+            ctx.fillText(line, x, y);
+            line = word + ' ';
+            y += lineHeight;
+        } else {
+            line = testLine;
+        }
+    });
+    ctx.fillText(line, x, y);
+}
+
+function drawEmberInfoPanel(){
+ if (!selectedEmber) {
+    return;
+ }
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
+    ctx.shadowBlur = 20;
+    ctx.fillRect(10, 10, 200, 100);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'white';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, 20, 30);
+    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, 20, 50);
+    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, 20, 70);
+    ctx.fillText(`Gender: ${selectedEmber.gender}`, 20, 90);
+      
+}
+
