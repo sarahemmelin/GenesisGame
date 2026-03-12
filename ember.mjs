@@ -105,6 +105,9 @@ class Ember {
             const channels = ['r', 'g', 'b'];
             const channel = channels[Math.floor(Math.random() * 3)];
             this[channel] = 0;
+            this.flickeredChannel = channel;
+        } else {
+            this.flickeredChannel = null;
         }
 
 //--- Velocity (smaller = faster) --- 
