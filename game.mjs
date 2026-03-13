@@ -288,6 +288,9 @@ if (showEpistasisPopup) {
         sizeTotal += ember.radius;
     });
     const avgSize = sizeTotal / embers.length;
+    const maleCount = embers.filter(e => e.gender === 'male').length;
+    const femaleCount = embers.length - maleCount;
+
 
 
     const firstColor = collectAlleleColors[0];
@@ -313,7 +316,7 @@ if (showEpistasisPopup) {
     let panelY = 10;
 
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(panelX, panelY, panelWidth, 110 + Object.keys(alleleCounts).length * 20);
+    ctx.fillRect(panelX, panelY, panelWidth, 150 + Object.keys(alleleCounts).length * 20);
 
     ctx.fillStyle = 'white';
     ctx.font = '14px monospace';
@@ -327,6 +330,8 @@ if (showEpistasisPopup) {
 
     ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
     ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
+    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 60);
+    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
 
     requestAnimationFrame(gameLoop);
 }
@@ -393,7 +398,7 @@ function drawIntroPopup() {
         const ex = canvas.width / 2 - 150;
         const ey = canvas.height / 2;
         const er = 20;
-        const color = introCard === 3 ? 'rgb(0, 180, 216)' : 'rgb(58, 157, 78)';
+        const color = introCard === 3 ? 'rgb(0, 180, 216)' : 'rgb(70, 208, 98)';
 
         ctx.shadowColor = color;
         ctx.shadowBlur = 35 + Math.sin(Date.now() /  300) * 15;
