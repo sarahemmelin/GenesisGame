@@ -307,32 +307,8 @@ if (showEpistasisPopup) {
 
     //=== UI ===
     // Left-side single ember panel
-   drawEmberInfoPanel();
-
-    // Right-side population panel
-    ctx.shadowBlur = 0;
-    const panelWidth = 220;
-    const panelX = canvas.width - panelWidth - 10;
-    let panelY = 10;
-
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(panelX, panelY, panelWidth, 150 + Object.keys(alleleCounts).length * 20);
-
-    ctx.fillStyle = 'white';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Population: ${embers.length}`, panelX + 10, panelY + 20);
-
-    ctx.fillText(`Allele pool:`, panelX + 10, panelY + 40);
-    Object.entries(alleleCounts).forEach(([color, count], i) => {
-        ctx.fillText(`${color}: ${count}`, panelX + 30, panelY + 60 + i * 20);
-    });
-
-    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
-    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
-    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 60);
-    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
-
+    drawEmberInfoPanel(Object.keys(alleleCounts).length);
+    drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
     requestAnimationFrame(gameLoop);
 }
 
@@ -476,23 +452,24 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 }
 
 
-function drawEmberInfoPanel(){
+function drawEmberInfoPanel(alleleCount = 0){
  if (!selectedEmber) {
     return;
  }
+    const panelX = canvas.width -230;
+    const panelY = 170 + alleleCount * 20;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
-    ctx.fillRect(10, 10, 200, 100);
+    ctx.fillRect(panelX, panelY, 200, 100);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'white';
     ctx.font = '14px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, 20, 30);
-    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, 20, 50);
-    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, 20, 70);
-    ctx.fillText(`Gender: ${selectedEmber.gender}`, 20, 90);
-      
+    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, panelX + 10, panelY + 20);
+    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
+    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, panelX + 10, panelY + 60);
+    ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
 }
 
 function drawBonusCard() {
@@ -513,4 +490,31 @@ function drawBonusCard() {
     ctx.fillText(`Gender: ${de.gender}`, x, canvas.height / 2 + 45);
     ctx.textAlign = 'center';
     ctx.fillText('[ Close ]', canvas.width / 2, canvas.height / 2 + 100);
+}
+
+// Right-side population panel
+function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount){
+    ctx.shadowBlur = 0;
+    const panelWidth = 220;
+    const panelX = canvas.width - panelWidth - 10;
+    let panelY = 10;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(panelX, panelY, panelWidth, 150 + Object.keys(alleleCounts).length * 20);
+
+    ctx.fillStyle = 'white';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Population: ${embers.length}`, panelX + 10, panelY + 20);
+
+    ctx.fillText(`Allele pool:`, panelX + 10, panelY + 40);
+    Object.entries(alleleCounts).forEach(([color, count], i) => {
+        ctx.fillText(`${color}: ${count}`, panelX + 30, panelY + 60 + i * 20);
+    });
+
+    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
+    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
+    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 60);
+    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
+
 }
