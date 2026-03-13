@@ -16,6 +16,7 @@ class Ember {
         this.matingTimer = 0;
         this.squishTimer = 0;
         this.squishHeld = false;
+        this.damageTint = 0;
 
 //--- Alleles (inherited or born with) ---
         if (parentA !== null && parentB !== null){
@@ -120,6 +121,8 @@ class Ember {
 
 //=== Functions ====== 
     draw(ctx) {
+    const alpha = this.damageTint > 0 ? 0.3 + Math.sin(this.damageTint * 1.5) * 0.4 : 1;
+    if (this.damageTint > 0) this.damageTint--;
     const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
     const displayRadius = this.age < 600 ? 5 + (this.radius - 5) * (this.age / 600) : this.radius;
     this.displayRadius = displayRadius;
@@ -129,10 +132,12 @@ class Ember {
     if (this.squishTimer > 0) {
         this.drawSquish(ctx, color, displayRadius);
     } else {
+        ctx.globalAlpha = alpha;
         ctx.beginPath();
         ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
+        ctx.globalAlpha = 1;
     }
 }
 
@@ -153,59 +158,52 @@ drawSquish(ctx, color, displayRadius) {
     ctx.globalAlpha = 1;
 }
 
-    update(width, height){
-        if (this.squishTimer > 0 && !this.squishHeld) {
-            this.squishTimer--;
+update(width, height){
+    if (this.squishTimer > 0 && !this.squishHeld) {
+        this.squishTimer--;
+    return;
+    }
+    if (this.squishHeld && this.squishTimer <= 50) return;
+
+    if (this.matingWith !== null && this.gender === 'female'){
+    return;
+    }
+    if (this.matingWith !== null && this.gender === 'male') {
+        const distanceX = this.x - this.matingWith.x;
+        const distanceY = this.y - this.matingWith.y;
+        const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+        const targetDist = this.radius + this.matingWith.radius;
+        const stretch = Math.sin(this.matingTimer * 3 / this.radius) * 3;
+        this.x = this.matingWith.x + distanceX / distance * (targetDist + stretch);
+        this.y = this.matingWith.y + distanceY / distance * (targetDist + stretch);
+        this.matingTimer++;
         return;
-        }
-        if (this.squishHeld && this.squishTimer <= 50) return;
-
-        if (this.matingWith !== null && this.gender === 'female'){
-             return;
-        }
-        if (this.matingWith !== null && this.gender === 'male') {
-            const distanceX = this.x - this.matingWith.x;
-            const distanceY = this.y - this.matingWith.y;
-            const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
-            const targetDist = this.radius + this.matingWith.radius;
-            const stretch = Math.sin(this.matingTimer * 3 / this.radius) * 3;
-            this.x = this.matingWith.x + distanceX / distance * (targetDist + stretch);
-            this.y = this.matingWith.y + distanceY / distance * (targetDist + stretch);
-            this.matingTimer++;
-            return;
-        }
-
-        if (this.x > width){
-             this.vx = -this.vx;
-        };
-
-        if (this.x < 0){
-             this.vx = -this.vx;
-        };
-
-        if (this.y > height){
-             this.vy = -this.vy;
-        };
-
-        if (this.y < 0){
-             this.vy = -this.vy;
-        };
-
-        this.x += this.vx;
-        this.y += this.vy;
-        this.age += 1;
-
-        if (this.matingCooldown > 0){
-            this.matingCooldown--;
-        };
-
-        if (this.squishTimer > 0 && !(this.squishTimer <= 50 && this.squishHeld))
-        {
-            this.squishTimer--;
-        }
-
     }
 
+    if (this.x > width){
+        this.vx = -this.vx;
+    };
+
+    if (this.x < 0){
+        this.vx = -this.vx;
+    };
+
+    if (this.y > height){
+        this.vy = -this.vy;
+    };
+
+    if (this.y < 0){
+        this.vy = -this.vy;
+    };
+
+    this.x += this.vx;
+    this.y += this.vy;
+    this.age += 1;
+
+    if (this.matingCooldown > 0){
+        this.matingCooldown--;
+    };
+}
 } 
 
 export default Ember;
