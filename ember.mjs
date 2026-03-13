@@ -14,6 +14,8 @@ class Ember {
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
         this.matingWith = null;
         this.matingTimer = 0;
+        this.squishTimer = 0;
+        this.squishHeld = false;
 
 //--- Alleles (inherited or born with) ---
         if (parentA !== null && parentB !== null){
@@ -45,8 +47,8 @@ class Ember {
                 new Allele(glowFromB.gene, glowFromB.value, glowFromB.strength)
             ];
 
-            const flickerAlleleFromA = parentA.flickerAlleles[Math.floor(Math.random() * 2)];
-            const flickerAlleleFromB = parentB.flickerAlleles[Math.floor(Math.random() * 2)];
+            const flickerAlleleFromA = parentA.flickerAlleles[Math.floor(Math.random() * 0.1)];
+            const flickerAlleleFromB = parentB.flickerAlleles[Math.floor(Math.random() * 0.1)];
             this.flickerAlleles = [
                 new Allele(flickerAlleleFromA.gene, flickerAlleleFromA.value, flickerAlleleFromA.strength),
                 new Allele(flickerAlleleFromB.gene, flickerAlleleFromB.value, flickerAlleleFromB.strength)
@@ -117,32 +119,59 @@ class Ember {
 
 
 //=== Functions ====== 
-    draw(ctx){    
-        const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 20;
+    draw(ctx) {
+    const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
+    const displayRadius = this.age < 600 ? 5 + (this.radius - 5) * (this.age / 600) : this.radius;
+    this.displayRadius = displayRadius;
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+
+    if (this.squishTimer > 0) {
+        this.drawSquish(ctx, color, displayRadius);
+    } else {
         ctx.beginPath();
-        const displayRadius = this.age < 600 ? 5 + (this.radius - 5) * (this.age / 600) : this.radius;
         ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
     }
+}
+
+drawSquish(ctx, color, displayRadius) {
+    const flatness = this.squishTimer > 50 ? (60 - this.squishTimer) / 10 : 1;
+    const alpha = this.squishTimer <= 50 && !this.squishHeld ? this.squishTimer / 50 : 1;
+    const scaleX = 1 + flatness * 1.5;
+    const scaleY = 1 - flatness * 0.8;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(this.x, this.y);
+    ctx.scale(scaleX, scaleY);
+    ctx.beginPath();
+    ctx.arc(0, 0, displayRadius, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha = 1;
+}
 
     update(width, height){
-        if (this.matingWith !== null && this.gender === 'female') return;
+        if (this.squishTimer > 0 && !this.squishHeld) {
+            this.squishTimer--;
+        return;
+        }
+        if (this.squishHeld && this.squishTimer <= 50) return;
+
+        if (this.matingWith !== null && this.gender === 'female'){
+             return;
+        }
         if (this.matingWith !== null && this.gender === 'male') {
             const distanceX = this.x - this.matingWith.x;
             const distanceY = this.y - this.matingWith.y;
             const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
             const targetDist = this.radius + this.matingWith.radius;
             const stretch = Math.sin(this.matingTimer * 3 / this.radius) * 3;
-            
             this.x = this.matingWith.x + distanceX / distance * (targetDist + stretch);
             this.y = this.matingWith.y + distanceY / distance * (targetDist + stretch);
-            
             this.matingTimer++;
-
-
             return;
         }
 
@@ -169,6 +198,12 @@ class Ember {
         if (this.matingCooldown > 0){
             this.matingCooldown--;
         };
+
+        if (this.squishTimer > 0 && !(this.squishTimer <= 50 && this.squishHeld))
+        {
+            this.squishTimer--;
+        }
+
     }
 
 } 

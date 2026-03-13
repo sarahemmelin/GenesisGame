@@ -141,5 +141,15 @@ born (tiny) (not implemented)
 - [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
   - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
 - [ ] Allele extinction popup: notify the player when a color allele goes fully extinct from the population
-- [ ] Germs: large entities that appear at random intervals and target specific alleles — acts as a bottleneck event, culling embers that carry that allele
+- [ ] Germs: large, black, spiky entities (layered rotating triangles) that the player accidentally introduces by handling the petri dish too much.
+  - Spawn at the cursor position (the contaminating "finger")
+  - Move around the canvas like embers, bounce off walls, have their own lifespan
+  - On contact with an ember: continuously drain that ember's remaining lifespan
+  - Damage is equal for all embers — no allele advantage. Survivors are determined by luck, not fitness.
+  - Player can squish them to help
+  - Trigger system: inactive until `lifetimeEmberCount >= 100` (after intro popup). After that, each canvas click increments `clicksSinceLastGerm`. Spawn threshold is randomised between 15–40 clicks each time. On trigger: spawn 1–4 Germs at cursor.
+  - If population drops to ~5 or fewer, those survivors become the founding population — popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
+- [ ] Second petri dish (maybe): a migration event where 3–5 random embers are sent to a smaller sub-canvas in the corner, founding an isolated colony. Player can toggle between the two populations and compare how they diverge. Teaches founder effect independently of bottleneck.
+- [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small. 
+
 

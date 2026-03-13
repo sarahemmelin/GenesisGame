@@ -77,6 +77,6 @@ canvas {
     background-color: crimson;
     color: white;
     border: none;
-    cursor: pointer;
+    cursor: grab;
     font-size: 1rem;
 }
