@@ -1,4 +1,5 @@
 import Ember from "./ember.mjs";
+import Germ from "./germ.mjs";
 
 //--- Canvas setup ---
 const canvas = document.getElementById('canvas');
@@ -8,7 +9,7 @@ canvas.height = window.innerHeight;
 
 //--- Start screen ---
 const startScreen = document.getElementById('start-screen');
-    document.getElementById('start-button').addEventListener('click', () => {
+document.getElementById('start-button').addEventListener('click', () => {
     startScreen.style.display = 'none';
     requestAnimationFrame(gameLoop);
 });
@@ -21,6 +22,15 @@ let draggedEmber = null;
 let squishedEmber = null;
 const navY = canvas.height * 0.70;
 
+// --- Embers --- 
+let embers = [];
+for (let i = 0; i < 10; i++){
+    embers.push(new Ember(Math.random() * canvas.width, Math.random() * canvas.height));
+}
+
+// --- Germs --- 
+let germs = [];
+
 // --- flags and references ---
 let epistasisSeen = false;
 let epistasisEmber = null;
@@ -31,6 +41,9 @@ let introSeen = false;
 let showIntroPopup = false;
 let introCard = 0;
 let squishMode = false; 
+let lifetimeEmberCount = embers.length;
+let clicksSinceLastGerm = 0;
+let germSpawnThreshold = Math.floor(Math.random() * 26) + 15; 
 
 // === popups ===
 // --- epistasiscards --- 
@@ -83,7 +96,17 @@ canvas.addEventListener('mousedown', (e) => {
         }
         return;
     }
+
     if (squishMode || e.shiftKey) {
+        const germIndex = germs.findIndex(germ => {
+        const dx = germ.x - e.clientX;
+        const dy = germ.y - e.clientY;
+    return Math.sqrt(dx * dx + dy * dy) < germ.radius;
+    });
+    if (germIndex !== -1) {
+        germs.splice(germIndex, 1);
+    return;
+    }
         squishedEmber = embers.find(ember => {
             const dx = ember.x - e.clientX;
             const dy = ember.y - e.clientY;
@@ -114,19 +137,13 @@ canvas.addEventListener('click', (e) => {
     const btnY = 10;
     if (e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
         e.offsetY >= btnY && e.offsetY <= btnY + 50) {
-        squishMode = e.offsetY < btnY + 30 ? false : true;
-        return;
-    }
-    if (showIntroPopup) { handleIntroClick(e); return; }
-    if (showEpistasisPopup) { handleEpistasisClick(e); return; }
-    handleEmberClick(e);
+            squishMode = e.offsetY < btnY + 30 ? false : true;
+            return;
+        }
+        if (showIntroPopup) { handleIntroClick(e); return; }
+        if (showEpistasisPopup) { handleEpistasisClick(e); return; }
+        handleGermSpawn(e);
 });
-
-
-let embers = [];
-for (let i = 0; i < 10; i++){
-    embers.push(new Ember(Math.random() * canvas.width, Math.random() * canvas.height));
-}
 
 function gameLoop(){
 //--- Clear canvas and cull dead embers ---
@@ -138,9 +155,7 @@ if (showEpistasisPopup) {
     return;
 }
 
-
     embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 1));
-
 
     if (!introSeen && embers.every(ember => ember.age >= 600)) {
         introSeen = true;
@@ -226,6 +241,7 @@ if (showEpistasisPopup) {
                 ember.matingWith
             );
             embers.push(offspring);
+            lifetimeEmberCount++;
 
             if (offspring.flickeredChannel !== null && !epistasisSeen) {
                 epistasisSeen = true;
@@ -244,7 +260,17 @@ if (showEpistasisPopup) {
 
 
     }
+
 });
+
+germs = germs.filter(germ => germ.age < germ.lifespan);
+germs.forEach(germ => {
+    germ.update(canvas.width, canvas.height);
+    germ.draw(ctx);
+});
+applyGermDamage();
+
+
 
 //--- Update and draw all embers ---
     embers.forEach(ember => {
@@ -532,17 +558,35 @@ function handleEpistasisClick(e) {
     else if (epistasisCard === epistasisCards.length - 1) { showEpistasisPopup = false; epistasisCard = 0; }
 }
 
-function handleEmberClick(e) {
-//  if (!squishMode && !e.shiftKey) return;
-//     const target = embers.find(ember => {
-//         const dx = ember.x - e.clientX;
-//         const dy = ember.y - e.clientY;
-//         return Math.sqrt(dx * dx + dy * dy) < ember.radius + 5;
-//     });
-//     if (target) target.squishTimer = 20;
+
+function handleGermSpawn(e){
+    if (lifetimeEmberCount >= 100) {
+    clicksSinceLastGerm++;
+    if (clicksSinceLastGerm >= germSpawnThreshold) {
+        const count = Math.floor(Math.random() * 8) + 3;
+        for (let i = 0; i < count; i++) {
+            germs.push(new Germ(e.offsetX, e.offsetY));
+        }
+        clicksSinceLastGerm = 0;
+        germSpawnThreshold = Math.floor(Math.random() * 26) + 15;
+        }
+    }
 }
 
+function applyGermDamage(){
+    germs.forEach(germ => {
+    embers.forEach(ember => {
+        const dx = ember.x - germ.x;
+        const dy = ember.y - germ.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < germ.radius + ember.radius) {
+            ember.lifespan -= 15;
+            ember.damageTint = 10;
+        }
+    });
+});
 
+}
 
 //help functions 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
