@@ -13,11 +13,12 @@ const startScreen = document.getElementById('start-screen');
     requestAnimationFrame(gameLoop);
 });
 
-// --- Stats ---
+// --- State ---
 let mouseX = 0;
 let mouseY = 0;
 let selectedEmber = null;
 let draggedEmber = null;
+let squishedEmber = null;
 const navY = canvas.height * 0.70;
 
 // --- flags and references ---
@@ -56,13 +57,40 @@ canvas.addEventListener('mousemove', (e) => {
         draggedEmber.x = mouseX;
         draggedEmber.y = mouseY;
     }
+    if (squishMode) {
+        canvas.style.cursor = 'pointer';
+    } else if (draggedEmber) {
+        canvas.style.cursor = 'grabbing';
+    } else {
+        canvas.style.cursor = 'grab';
+    }
+    if (squishedEmber) {
+    const dx = squishedEmber.x - mouseX;
+    const dy = squishedEmber.y - mouseY;
+    if (Math.sqrt(dx * dx + dy * dy) > squishedEmber.radius + 5) {
+        squishedEmber.squishHeld = false;
+        squishedEmber = null;
+    }
+}
+
 });
 
 canvas.addEventListener('mousedown', (e) => {
-        if (showEpistasisPopup) {
+    if (showEpistasisPopup) {
         const de = selectedEmber;
         if (de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5) {
             draggedEmber = de;
+        }
+        return;
+    }
+    if (squishMode || e.shiftKey) {
+        squishedEmber = embers.find(ember => {
+            const dx = ember.x - e.clientX;
+            const dy = ember.y - e.clientY;
+            return Math.sqrt(dx * dx + dy * dy) < ember.radius + 5;
+        });
+        if (squishedEmber && squishedEmber.squishTimer === 0){ 
+            squishedEmber.squishTimer = 60; squishedEmber.squishHeld = true; 
         }
         return;
     }
@@ -77,63 +105,22 @@ canvas.addEventListener('mousedown', (e) => {
 
 canvas.addEventListener('mouseup', () => {
     draggedEmber = null;
+    if (squishedEmber) { squishedEmber.squishHeld = false; squishedEmber = null; }
 });
+
 
 canvas.addEventListener('click', (e) => {
-    if (showIntroPopup) {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
-        const clickedForward = introCard < introCards.length - 1 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
-
-        if (clickedBack) {
-            introCard--;
-        } else if (clickedForward) {
-            introCard++;
-        } else if (introCard === introCards.length - 1) {
-            showIntroPopup = false;
-            introCard = 0;
-        }
-    return;
-}
-
-
-    if (showEpistasisPopup) {
-        const de = selectedEmber;
-        const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
-
-    if (showBonusCard) {
-        const closeX = canvas.width / 2;
-        const closeY = canvas.height / 2 + 100;
-        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) {
-            showBonusCard = false;
-        }
-    return;
+    const btnX = canvas.width - 370;
+    const btnY = 10;
+    if (e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
+        e.offsetY >= btnY && e.offsetY <= btnY + 50) {
+        squishMode = e.offsetY < btnY + 30 ? false : true;
+        return;
     }
-
-
-        if (onEmber) {
-            showBonusCard = true;
-            return;
-        }
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-
-        const clickedBack = epistasisCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
-        const clickedForward = epistasisCard < epistasisCards.length - 1 && Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
-
-        if (clickedBack) {
-            epistasisCard--;
-
-        } else if (clickedForward) {
-            epistasisCard++;
-        } else if (epistasisCard === epistasisCards.length - 1) {
-            showEpistasisPopup = false;
-            epistasisCard = 0;
-        }
-    }
+    if (showIntroPopup) { handleIntroClick(e); return; }
+    if (showEpistasisPopup) { handleEpistasisClick(e); return; }
+    handleEmberClick(e);
 });
-
 
 
 let embers = [];
@@ -152,7 +139,8 @@ if (showEpistasisPopup) {
 }
 
 
-    embers = embers.filter(ember => ember.age < ember.lifespan);
+    embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 1));
+
 
     if (!introSeen && embers.every(ember => ember.age >= 600)) {
         introSeen = true;
@@ -185,6 +173,10 @@ if (showEpistasisPopup) {
     for (let j = i + 1; j < embers.length; j++) {
         const a = embers[i];
         const b = embers[j];
+
+    if (a.squishTimer > 0 || b.squishTimer > 0){
+        continue;
+    } 
 
         const dx = a.x - b.x;
         const dy = a.y - b.y;
@@ -307,6 +299,7 @@ if (showEpistasisPopup) {
 
     drawEmberInfoPanel(Object.keys(alleleCounts).length);
     drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
+    drawModeButtons();
     requestAnimationFrame(gameLoop);
 }
 
@@ -497,6 +490,59 @@ function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femal
     ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
 
 }
+
+function drawModeButtons(){
+    const btnX = canvas.width - 370;
+    const btnY = 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(btnX, btnY, 130, 50);
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = squishMode ? '#555' : 'white';
+    ctx.fillText('[ grab ]', btnX + 10, btnY + 20);
+    ctx.fillStyle = squishMode ? 'white' : '#555';
+    ctx.fillText('[ squish ]', btnX + 10, btnY + 40);
+}
+
+function handleIntroClick(e) {
+    const cx = canvas.width / 2;
+    const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
+    const clickedForward = introCard < introCards.length - 1 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
+    if (clickedBack) introCard--;
+    else if (clickedForward) introCard++;
+    else if (introCard === introCards.length - 1) { showIntroPopup = false; introCard = 0; }
+}
+
+function handleEpistasisClick(e) {
+    if (showBonusCard) {
+        const closeX = canvas.width / 2;
+        const closeY = canvas.height / 2 + 100;
+        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) showBonusCard = false;
+        return;
+    }
+    const de = selectedEmber;
+    const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
+    if (onEmber) { showBonusCard = true; return; }
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const clickedBack = epistasisCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
+    const clickedForward = epistasisCard < epistasisCards.length - 1 && Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
+    if (clickedBack) epistasisCard--;
+    else if (clickedForward) epistasisCard++;
+    else if (epistasisCard === epistasisCards.length - 1) { showEpistasisPopup = false; epistasisCard = 0; }
+}
+
+function handleEmberClick(e) {
+//  if (!squishMode && !e.shiftKey) return;
+//     const target = embers.find(ember => {
+//         const dx = ember.x - e.clientX;
+//         const dy = ember.y - e.clientY;
+//         return Math.sqrt(dx * dx + dy * dy) < ember.radius + 5;
+//     });
+//     if (target) target.squishTimer = 20;
+}
+
+
 
 //help functions 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
