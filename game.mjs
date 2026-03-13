@@ -29,6 +29,7 @@ let showBonusCard = false;
 let introSeen = false;
 let showIntroPopup = false;
 let introCard = 0;
+let squishMode = false; 
 
 // === popups ===
 // --- epistasiscards --- 
@@ -210,7 +211,7 @@ if (showEpistasisPopup) {
         }
     }
     }
-    //--- After mating: Spawn offspring + separate embers ---
+//--- After mating: Spawn offspring + separate embers ---
     embers.forEach(ember => {
     if (ember.gender === 'male' && ember.matingTimer >= 600) {
         const roll = Math.random();
@@ -290,9 +291,6 @@ if (showEpistasisPopup) {
     const avgSize = sizeTotal / embers.length;
     const maleCount = embers.filter(e => e.gender === 'male').length;
     const femaleCount = embers.length - maleCount;
-
-
-
     const firstColor = collectAlleleColors[0];
     const isFixed = collectAlleleColors.every(value => value === firstColor);
     
@@ -305,8 +303,8 @@ if (showEpistasisPopup) {
         return;
     }
 
-    //=== UI ===
-    // Left-side single ember panel
+//--- drawing UI ----
+
     drawEmberInfoPanel(Object.keys(alleleCounts).length);
     drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
     requestAnimationFrame(gameLoop);
@@ -357,7 +355,6 @@ function drawEpistasisPopup(){
         ctx.shadowBlur = 0;
     }
 }
-
 
 function drawIntroPopup() {
     ctx.shadowBlur = 0;
@@ -435,23 +432,6 @@ function drawIntroPopup() {
 
 }
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    words.forEach(word => {
-        const testLine = line + word + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && line !== '') {
-            ctx.fillText(line, x, y);
-            line = word + ' ';
-            y += lineHeight;
-        } else {
-            line = testLine;
-        }
-    });
-    ctx.fillText(line, x, y);
-}
-
-
 function drawEmberInfoPanel(alleleCount = 0){
  if (!selectedEmber) {
     return;
@@ -492,7 +472,6 @@ function drawBonusCard() {
     ctx.fillText('[ Close ]', canvas.width / 2, canvas.height / 2 + 100);
 }
 
-// Right-side population panel
 function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount){
     ctx.shadowBlur = 0;
     const panelWidth = 220;
@@ -517,4 +496,21 @@ function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femal
     ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 60);
     ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
 
+}
+
+//help functions 
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    const words = text.split(' ');
+    let line = '';
+    words.forEach(word => {
+        const testLine = line + word + ' ';
+        if (ctx.measureText(testLine).width > maxWidth && line !== '') {
+            ctx.fillText(line, x, y);
+            line = word + ' ';
+            y += lineHeight;
+        } else {
+            line = testLine;
+        }
+    });
+    ctx.fillText(line, x, y);
 }
