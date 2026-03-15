@@ -5,8 +5,8 @@ class Germ {
         this.age = 0;
         this.lifespan = 1800 + Math.random() * 1800;
         this.radius = 40 + Math.random() * 20;
-        this.vx = (Math.random() - 0.5) * 1.2;
-        this.vy = (Math.random() - 0.5) * 1.2;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
         this.rotation = 0;
     }
 

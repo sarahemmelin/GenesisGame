@@ -141,15 +141,29 @@ born (tiny) (not implemented)
 - [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
   - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
 - [ ] Allele extinction popup: notify the player when a color allele goes fully extinct from the population
-- [ ] Germs: large, black, spiky entities (layered rotating triangles) that the player accidentally introduces by handling the petri dish too much.
-  - Spawn at the cursor position (the contaminating "finger")
-  - Move around the canvas like embers, bounce off walls, have their own lifespan
-  - On contact with an ember: continuously drain that ember's remaining lifespan
-  - Damage is equal for all embers — no allele advantage. Survivors are determined by luck, not fitness.
-  - Player can squish them to help
-  - Trigger system: inactive until `lifetimeEmberCount >= 100` (after intro popup). After that, each canvas click increments `clicksSinceLastGerm`. Spawn threshold is randomised between 15–40 clicks each time. On trigger: spawn 1–4 Germs at cursor.
-  - If population drops to ~5 or fewer, those survivors become the founding population — popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
+- [x] Germs: large, black, spiky entities (layered rotating triangles) that the player accidentally introduces by handling the petri dish too much.
+  - [x] Spawn at the cursor position (the contaminating "finger")
+  - [x] Move around the canvas like embers, bounce off walls, have their own lifespan
+  - [x] On contact with an ember: continuously drain that ember's remaining lifespan (ember flickers in opacity while being damaged)
+  - [x] Damage is equal for all embers — no allele advantage. Survivors are determined by luck, not fitness.
+  - [x] Player can squish them (instant kill in squish mode)
+  - [x] Trigger system: inactive until `lifetimeEmberCount >= 100` (after intro popup). After that, each canvas click increments `clicksSinceLastGerm`. Spawn threshold is randomised between 15–40 clicks each time. On trigger: spawn 3–10 Germs at cursor.
+  - [ ] Consider: germ size (`radius`) could scale damage dealt — bigger germ = more drain per frame. Currently all germs drain equally regardless of size.
+  - [ ] Bottleneck popup: if population drops to ~5 or fewer, those survivors become the founding population — popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
 - [ ] Second petri dish (maybe): a migration event where 3–5 random embers are sent to a smaller sub-canvas in the corner, founding an isolated colony. Player can toggle between the two populations and compare how they diverge. Teaches founder effect independently of bottleneck.
 - [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small. 
+- [ ] Embers and germs should not be able to move behind panels.
+- [ ] Cooldown timer on just-mated
+- [ ] Hightlight around selected Ember 
+- [ ] Extinct panel when Allele is extinct
+- [ ] Increase speed and damage on germs
+- [ ] Win conditions:
+    - [ ] Achievements (20 of each)
+    - [ ] Collect identical samples (20 identical Embers)
+    - [ ] Get fixation (1 round)
+    - [ ] Every color allele must survive for x amount of time 
+    - 
+
+- [ ] Collect Embers for later study
 
 

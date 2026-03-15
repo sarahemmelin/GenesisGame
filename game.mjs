@@ -560,10 +560,10 @@ function handleEpistasisClick(e) {
 
 
 function handleGermSpawn(e){
-    if (lifetimeEmberCount >= 100) {
+    if (lifetimeEmberCount >= 15) {
     clicksSinceLastGerm++;
     if (clicksSinceLastGerm >= germSpawnThreshold) {
-        const count = Math.floor(Math.random() * 8) + 3;
+        const count = Math.floor(Math.random() * 10) + 5;
         for (let i = 0; i < count; i++) {
             germs.push(new Germ(e.offsetX, e.offsetY));
         }
@@ -581,7 +581,7 @@ function applyGermDamage(){
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < germ.radius + ember.radius) {
             ember.lifespan -= 15;
-            ember.damageTint = 10;
+            ember.damageTint = 50;
         }
     });
 });
