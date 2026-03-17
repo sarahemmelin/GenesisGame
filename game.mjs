@@ -33,7 +33,7 @@ let germs = [];
 
 // --- flags and references ---
 let epistasisSeen = false;
-let epistasisEmber = null;
+let epistasisEmberFound = false;
 let showEpistasisPopup = false;
 let epistasisCard = 0;
 let showBonusCard = false;
@@ -143,19 +143,35 @@ canvas.addEventListener('click', (e) => {
         if (showIntroPopup) { handleIntroClick(e); return; }
         if (showEpistasisPopup) { handleEpistasisClick(e); return; }
         handleGermSpawn(e);
-});
+        const clickedEmber = embers.find(ember => {
+        const dx = ember.x - e.offsetX;
+        const dy = ember.y - e.offsetY;
+        return Math.sqrt(dx * dx + dy * dy) < ember.radius;
+    });
+    if (clickedEmber){
+         selectedEmber = clickedEmber;    
+    } else {
+        selectedEmber = null;
+    }
+    
+;})
+
 
 function gameLoop(){
 //--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 if (showEpistasisPopup) {
-    embers.forEach(ember => ember.draw(ctx));
+    embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
     drawEpistasisPopup();
     requestAnimationFrame(gameLoop);
     return;
 }
 
     embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 1));
+    if (selectedEmber && !embers.includes(selectedEmber)){
+        selectedEmber = null;
+    };
+
 
     if (!introSeen && embers.every(ember => ember.age >= 600)) {
         introSeen = true;
@@ -201,7 +217,7 @@ if (showEpistasisPopup) {
             distance < 50 &&
             a.gender !== b.gender &&
             a.age > 600 && b.age > 600 &&
-            a.matingCooldown === 0 && b.matingCooldown === 0 &&
+            a.matingCooldown <= 0 && b.matingCooldown <= 0 &&
              a.matingWith === null && b.matingWith === null
         ) {
 
@@ -245,7 +261,6 @@ if (showEpistasisPopup) {
 
             if (offspring.flickeredChannel !== null && !epistasisSeen) {
                 epistasisSeen = true;
-                epistasisEmber = offspring;
                 showEpistasisPopup = true;
                 selectedEmber = offspring;
             }
@@ -277,12 +292,8 @@ applyGermDamage();
         if (ember !== draggedEmber){
             ember.update(canvas.width, canvas.height);
         }
-        ember.draw(ctx);       
+        ember.draw(ctx, ember === selectedEmber);       
     })
-
-    // ctx.fillStyle = 'white';
-    // ctx.font = '12px serif';
-    // ctx.fillText('← GOD', mouseX + 40, mouseY);
 
     //Fixation
     const collectAlleleColors = [];
@@ -347,8 +358,10 @@ function drawEpistasisPopup(){
     if (epistasisCard > 0) {
         ctx.fillText('◀', canvas.width / 2 - 200, canvas.height / 2 + 80);
     }
-    if (epistasisCard < epistasisCards.length - 1) {
+    if (epistasisEmberFound && epistasisCard < epistasisCards.length - 1) {
         ctx.fillText('▶', canvas.width / 2 + 200, canvas.height / 2 + 80);
+    } else if (!epistasisEmberFound){
+    ctx.fillText('Click the ember to continue.',canvas.width / 2, canvas.height / 2 + 80); 
     } else {
         ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
     }
@@ -360,19 +373,9 @@ function drawEpistasisPopup(){
         drawBonusCard();
     }
     if (selectedEmber) {
-        selectedEmber.draw(ctx);
+        selectedEmber.draw(ctx, true);
     }
-        if (epistasisEmber && !showBonusCard) {
-        const pulse = 50 + Math.sin(Date.now() / 300) * 15;
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = pulse;
-        ctx.beginPath();
-        ctx.arc(epistasisEmber.x, epistasisEmber.y, epistasisEmber.displayRadius + 15, 0, Math.PI * 2);
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-    }
+    ctx.shadowBlur = 0;
 }
 
 function drawIntroPopup() {
@@ -460,7 +463,7 @@ function drawEmberInfoPanel(alleleCount = 0){
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
-    ctx.fillRect(panelX, panelY, 200, 100);
+    ctx.fillRect(panelX, panelY, 200, 120);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'white';
     ctx.font = '14px monospace';
@@ -469,6 +472,9 @@ function drawEmberInfoPanel(alleleCount = 0){
     ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
     ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, panelX + 10, panelY + 60);
     ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
+    const cooldownText = selectedEmber.matingCooldown > 0 ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown / 60)}s` : 'Ready';
+    ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + 100);
+
 }
 
 function drawBonusCard() {
@@ -534,9 +540,14 @@ function handleIntroClick(e) {
     const cx = canvas.width / 2;
     const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
     const clickedForward = introCard < introCards.length - 1 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
-    if (clickedBack) introCard--;
-    else if (clickedForward) introCard++;
-    else if (introCard === introCards.length - 1) { showIntroPopup = false; introCard = 0; }
+    if (clickedBack) {
+    introCard--;
+    } else if (clickedForward) {
+    introCard++; 
+    }
+    else if (introCard === introCards.length - 1) { 
+    showIntroPopup = false; introCard = 0; 
+    }
 }
 
 function handleEpistasisClick(e) {
@@ -548,13 +559,21 @@ function handleEpistasisClick(e) {
     }
     const de = selectedEmber;
     const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
-    if (onEmber) { showBonusCard = true; return; }
+    if (onEmber) { 
+    epistasisEmberFound = true;
+    showBonusCard = true; 
+    return; 
+    }
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     const clickedBack = epistasisCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
     const clickedForward = epistasisCard < epistasisCards.length - 1 && Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
-    if (clickedBack) epistasisCard--;
-    else if (clickedForward) epistasisCard++;
+    if (clickedBack){
+     epistasisCard--;
+     }
+    else if (clickedForward  && epistasisEmberFound) {
+    epistasisCard++;
+    }
     else if (epistasisCard === epistasisCards.length - 1) { showEpistasisPopup = false; epistasisCard = 0; }
 }
 
