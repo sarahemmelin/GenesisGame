@@ -154,9 +154,9 @@ born (tiny) (not implemented)
 - [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small. 
 - [ ] Embers and germs should not be able to move behind panels.
 - [ ] Cooldown timer on just-mated
-- [ ] Hightlight around selected Ember 
+- [x] Hightlight around selected Ember
 - [ ] Extinct panel when Allele is extinct
-- [ ] Increase speed and damage on germs
+- [x] Increase speed and damage on germs
 - [ ] Win conditions:
     - [ ] Achievements (20 of each)
     - [ ] Collect identical samples (20 identical Embers)

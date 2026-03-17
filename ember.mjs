@@ -10,7 +10,6 @@ class Ember {
         this.x = x;
         this.y = y;
         this.age = 0;
-        this.matingCooldown = 300;
         this.gender = Math.random() < 0.5 ? 'male' : 'female';
         this.matingWith = null;
         this.matingTimer = 0;
@@ -81,8 +80,8 @@ class Ember {
         ];
 
         this.flickerAlleles = [
-            new Allele('baseFlicker', Math.random() * 0.1),
-            new Allele('baseFlicker', Math.random() * 0.1)
+            new Allele('baseFlicker', Math.random() * 0.01),
+            new Allele('baseFlicker', Math.random() * 0.01)
         ];
         }
 
@@ -90,6 +89,7 @@ class Ember {
         const size1 = SIZES[this.sizeAlleles[0].value];
         const size2 = SIZES[this.sizeAlleles[1].value];
         this.radius = (size1 * this.sizeAlleles[0].strength + size2 * this.sizeAlleles[1].strength) / (this.sizeAlleles[0].strength + this.sizeAlleles[1].strength);
+        this.matingCooldown = this.radius * 20;
         this.lifespan = this.radius * 300;
 
 //--- Resove color (r,g,b) from color alleles ---
@@ -120,12 +120,23 @@ class Ember {
 
 
 //=== Functions ====== 
-    draw(ctx) {
+    draw(ctx, isSelected) {
     const alpha = this.damageTint > 0 ? 0.3 + Math.sin(this.damageTint * 1.5) * 0.4 : 1;
     if (this.damageTint > 0) this.damageTint--;
     const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
     const displayRadius = this.age < 600 ? 5 + (this.radius - 5) * (this.age / 600) : this.radius;
     this.displayRadius = displayRadius;
+
+
+    if (isSelected){
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 30;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+
     ctx.shadowColor = color;
     ctx.shadowBlur = 20;
 
