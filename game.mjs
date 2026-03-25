@@ -1,5 +1,6 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
+import Virus from "./virus.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
 
@@ -33,10 +34,16 @@ let squishedEmber = null;
 let embers = spawnTutorialEmbers(canvas.width, canvas.height);
 
 
-// --- Germs --- 
+// --- Germs ---
 let germs = [];
 
+// --- Viruses ---
+let viruses = [];
+let virusOutbreakTimer = 0;
+let virusOutbreakInterval = 60 + Math.random() * 30;
+
 // --- flags and references ---
+let phase2Started = false;
 let epistasisSeen = false;
 let epistasisEmberFound = false;
 let showEpistasisPopup = false;
@@ -179,6 +186,14 @@ function gameLoop(timestamp){
 
     updateTutorial(embers, dt);
 
+    if (!phase2Started && getStep() === TUTORIAL_STEP.GROW && !isShowingGoalCards() && !isShowingMatingSuccess()) {
+        phase2Started = true;
+        embers.forEach(ember => {
+            ember.immortal = false;
+            ember.age = 10;
+        });
+    }
+
     if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) {
         embers.forEach(ember => ember.draw(ctx));
         drawTutorial(ctx);
@@ -288,6 +303,35 @@ germs.forEach(germ => {
     germ.draw(ctx);
 });
 applyGermDamage(dt);
+
+// --- Virus outbreak trigger ---
+if (!isTutorialActive()) {
+    virusOutbreakTimer += dt;
+    if (virusOutbreakTimer >= virusOutbreakInterval) {
+        triggerVirusOutbreak();
+        virusOutbreakTimer = 0;
+        virusOutbreakInterval = 60 + Math.random() * 30;
+    }
+}
+
+// --- Update, spread, draw, and kill viruses ---
+viruses = viruses.filter(v => embers.includes(v.host));
+const toKill = [];
+viruses.forEach(virus => {
+    if (virus.update(dt)) toKill.push(virus.host);
+    embers.forEach(ember => {
+        if (ember === virus.host) return;
+        if (viruses.some(v => v.host === ember)) return;
+        if (!ember.colorAlleles.some(a => a.value === virus.targetAllele)) return;
+        const dx = ember.x - virus.host.x;
+        const dy = ember.y - virus.host.y;
+        if (Math.sqrt(dx * dx + dy * dy) < 40) {
+            viruses.push(new Virus(ember, virus.targetAllele));
+        }
+    });
+    virus.draw(ctx);
+});
+toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
 
 
 
@@ -509,6 +553,24 @@ function handleEpistasisClick(e) {
     else if (epistasisCard === epistasisCards.length - 1) { showEpistasisPopup = false; epistasisCard = 0; }
 }
 
+
+function triggerVirusOutbreak() {
+    const presentAlleles = [];
+    embers.forEach(ember => {
+        ember.colorAlleles.forEach(a => {
+            if (!presentAlleles.includes(a.value)) presentAlleles.push(a.value);
+        });
+    });
+    if (presentAlleles.length === 0) return;
+    const targetAllele = presentAlleles[Math.floor(Math.random() * presentAlleles.length)];
+    const carriers = embers.filter(ember =>
+        ember.colorAlleles.some(a => a.value === targetAllele) &&
+        !viruses.some(v => v.host === ember)
+    );
+    if (carriers.length === 0) return;
+    const host = carriers[Math.floor(Math.random() * carriers.length)];
+    viruses.push(new Virus(host, targetAllele));
+}
 
 function handleGermSpawn(e){
     if (lifetimeEmberCount >= 15) {
