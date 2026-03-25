@@ -1,7 +1,7 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
-import { spawnTutorialEmbers, isShowingIntro, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
+import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
 
 
 
@@ -133,7 +133,7 @@ canvas.addEventListener('click', (e) => {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
         }
-    if (isShowingIntro()) { 
+    if (isShowingIntro() || isShowingMatingSuccess()) { 
         handleTutorialClick(e, ctx); 
         return; 
     }
@@ -177,7 +177,9 @@ function gameLoop(timestamp){
         selectedEmber = null;
     };
 
-    if (isShowingIntro()) {
+    updateTutorial(embers, dt);
+
+    if (isShowingIntro() || isShowingMatingSuccess()) {
         embers.forEach(ember => ember.draw(ctx));
         drawTutorial(ctx);
         requestAnimationFrame(gameLoop);
@@ -205,7 +207,11 @@ function gameLoop(timestamp){
 
     if (a.squishTimer > 0 || b.squishTimer > 0){
         continue;
-    } 
+    }
+
+    if (getStep() === TUTORIAL_STEP.FIND_AND_MATE && !(a.tutorialId && b.tutorialId)) {
+        continue;
+    }
 
         const dx = a.x - b.x;
         const dy = a.y - b.y;
@@ -257,7 +263,7 @@ function gameLoop(timestamp){
             embers.push(offspring);
             lifetimeEmberCount++;
 
-            if (offspring.flickeredChannel !== null && !epistasisSeen) {
+            if (offspring.flickeredChannel !== null && !epistasisSeen && !isTutorialActive()) {
                 epistasisSeen = true;
                 showEpistasisPopup = true;
                 selectedEmber = offspring;
@@ -403,7 +409,9 @@ function drawEmberInfoPanel(){
     ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
     ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, panelX + 10, panelY + 60);
     ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
-    const cooldownText = selectedEmber.matingCooldown > 0 ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s` : 'Ready';
+    const cooldownText = selectedEmber.matingCooldown > 0
+        ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s`
+        : selectedEmber.age < 10 ? 'Too young' : 'Ready';
     ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + 100);
 
 }

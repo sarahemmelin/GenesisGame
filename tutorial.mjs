@@ -8,6 +8,16 @@ let introCard = 0;
 
 // --- flags and references ---
 let showIntro = true;
+let showMatingSuccess = false;
+let matingSuccessCard = 0;
+let matingDetected = false;
+let matingTimer = 0;
+let phase1Complete = false;
+
+const matingSuccessCards = [
+    "Excellent! They're mating.",
+    "New goal: Grow the population to 50 without losing all alleles of any one color."
+];
 
 // --- introcards --- 
 const introCardsText = [
@@ -19,6 +29,10 @@ const introCardsText = [
 ];
 
 export function draw(ctx) {
+        if (showMatingSuccess) {
+        drawMatingSuccess(ctx);
+        return;
+    }
     let navY = ctx.canvas.height * 0.70;
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
@@ -91,19 +105,54 @@ export function draw(ctx) {
 }
 
 export function isShowingIntro() {
-     return showIntro; 
-    }
+    return showIntro;
+}
+
+export function isTutorialActive() {
+    return step === TUTORIAL_STEP.FIND_AND_MATE || step === TUTORIAL_STEP.GROW;
+}
+
+export function getStep() { return step; }
+
+export function isShowingMatingSuccess() {
+    return showMatingSuccess;
+}
 
 export function spawnTutorialEmbers(canvasWidth, canvasHeight) {
     const embers = [];
-    let ember = new Ember(Math.random() * canvasWidth, Math.random() *canvasHeight, null, null, { color: 'blue', gender: 'male'});
-    ember.immortal = true;
-    embers.push(ember);
-return embers;
+    const blueMale = makeEmber('blue', 'male', canvasWidth, canvasHeight);
+    blueMale.tutorialId = 'target';
+    embers.push(blueMale);
+    const goldFemale = makeEmber('gold', 'female', canvasWidth, canvasHeight);
+    goldFemale.tutorialId = 'target';
+    embers.push(goldFemale);
+    embers.push(makeEmber('crimson', 'male', canvasWidth, canvasHeight));
+    embers.push(makeEmber('violet', 'female', canvasWidth, canvasHeight));
+    embers.push(makeEmber('blue', 'female', canvasWidth, canvasHeight));
+    embers.push(makeEmber('crimson', 'male', canvasWidth, canvasHeight));
+    return embers;
 }
 
 
-//help functions 
+function drawMatingSuccess(ctx) {
+    const cx = ctx.canvas.width / 2;
+    const cy = ctx.canvas.height / 2;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(matingSuccessCards[matingSuccessCard], cx, cy - 20);
+    ctx.font = '16px sans-serif';
+    if (matingSuccessCard < matingSuccessCards.length - 1) {
+        ctx.fillText('▶', cx + 200, cy + 20);
+    } else {
+        ctx.fillText('Click anywhere to continue.', cx, cy + 20);
+    }
+}
+
+//help functions
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
     let line = '';
@@ -120,8 +169,25 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     ctx.fillText(line, x, y);
 }
 
+function makeEmber(color, gender, canvasWidth, canvasHeight) {
+    const e = new Ember(Math.random() * canvasWidth, Math.random() * canvasHeight, null, null, {color, gender})
+    e.immortal = true;
+    return e;
+};
 
 export function handleClick(e, ctx) {
+    if (showMatingSuccess) {
+        const cx = ctx.canvas.width / 2;
+        const cy = ctx.canvas.height / 2;
+        if (matingSuccessCard < matingSuccessCards.length - 1) {
+            const clickedForward = Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 20)) < 30;
+            if (clickedForward) matingSuccessCard++;
+        } else {
+            showMatingSuccess = false;
+            matingSuccessCard = 0;
+        }
+        return;
+    }
     const cx = ctx.canvas.width / 2;
     const navY = ctx.canvas.height * 0.70;
     const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
@@ -136,4 +202,22 @@ export function handleClick(e, ctx) {
     }
 }
 
-export function update(embers) {};
+export function update(embers, dt) {
+    const match = embers.find(ember =>
+        ember.gender === 'male' &&
+        ember.matingWith !== null &&
+        ember.colorAlleles.some(a => a.value === 'blue') &&
+        ember.matingWith.colorAlleles.some(a => a.value === 'gold')
+    );
+    if (match && !matingDetected) {
+        matingDetected = true;
+    }
+    if (matingDetected && !showMatingSuccess && !phase1Complete) {
+        matingTimer += dt;
+        if (matingTimer >= 3) {
+            step = TUTORIAL_STEP.GROW;
+            showMatingSuccess = true;
+            phase1Complete = true;
+        }
+    }
+};
