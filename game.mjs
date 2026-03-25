@@ -334,7 +334,7 @@ applyGermDamage();
 
 //--- drawing UI ----
 
-    drawEmberInfoPanel(Object.keys(alleleCounts).length);
+    drawEmberInfoPanel();
     drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
     drawModeButtons();
     requestAnimationFrame(gameLoop);
@@ -454,12 +454,22 @@ function drawIntroPopup() {
 
 }
 
-function drawEmberInfoPanel(alleleCount = 0){
- if (!selectedEmber) {
-    return;
- }
-    const panelX = canvas.width -230;
-    const panelY = 170 + alleleCount * 20;
+function drawEmberInfoPanel(){
+    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup || showIntroPopup) return;
+
+    const panelWidth = 200;
+    const panelHeight = 120;
+    const offset = (selectedEmber.displayRadius ?? selectedEmber.radius) + 15;
+
+    // Place on whichever side has more room
+    const placeOnRight = selectedEmber.x < canvas.width / 2;
+    let panelX = placeOnRight
+        ? selectedEmber.x + offset
+        : selectedEmber.x - offset - panelWidth;
+    let panelY = selectedEmber.y - panelHeight / 2;
+    // Clamp vertically so panel never goes off the top or bottom
+    if (panelY < 0) panelY = 0;
+    if (panelY + panelHeight > canvas.height) panelY = canvas.height - panelHeight;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
@@ -554,7 +564,10 @@ function handleEpistasisClick(e) {
     if (showBonusCard) {
         const closeX = canvas.width / 2;
         const closeY = canvas.height / 2 + 100;
-        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) showBonusCard = false;
+        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) {
+            showBonusCard = false;
+            epistasisCard = 1; // advance past "find the ember" card
+        }
         return;
     }
     const de = selectedEmber;
