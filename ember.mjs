@@ -82,8 +82,8 @@ class Ember {
         ];
 
         this.flickerAlleles = [
-            new Allele('baseFlicker', 0, 0),
-            new Allele('baseFlicker', 0, 0)
+            new Allele('baseFlicker', 0, -1),
+            new Allele('baseFlicker', 0, -1)
         ];
         } else {
         this.sizeAlleles = [

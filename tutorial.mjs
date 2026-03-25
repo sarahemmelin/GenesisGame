@@ -1,25 +1,12 @@
 import Ember from "./ember.mjs";
-import { TUTORIAL_STEP } from "./constants.mjs";
+import { TUTORIAL_STEP, BASE_COLORS } from "./constants.mjs";
 
 // --- State ---
 let step = TUTORIAL_STEP.FIND_AND_MATE;
-let introCard = 0;
 
-
-// --- flags and references ---
+// --- Intro ---
 let showIntro = true;
-let showMatingSuccess = false;
-let matingSuccessCard = 0;
-let matingDetected = false;
-let matingTimer = 0;
-let phase1Complete = false;
-
-const matingSuccessCards = [
-    "Excellent! They're mating.",
-    "New goal: Grow the population to 50 without losing all alleles of any one color."
-];
-
-// --- introcards --- 
+let introCard = 0;
 const introCardsText = [
     "This is a male Ember. It's a tiny creature living in your petri dish.",
     "Embers are diploid, meaning each carries two color alleles, one inherited from each parent.",
@@ -28,9 +15,41 @@ const introCardsText = [
     "Click on an Ember to inspect it. Find a male with a blue allele and drag it to a female with a gold allele."
 ];
 
+// --- Phase 1: Find and mate ---
+let showMatingSuccess = false;
+let matingSuccessCard = 0;
+let matingDetected = false;
+let matingTimer = 0;
+let phase1Complete = false;
+const matingSuccessCards = [
+    "Excellent! They're mating.",
+];
+
+// --- Phase 2: Grow the population ---
+let showGoalCards = false;
+let goalCard = 0;
+const goalCards = [
+    "Now they can age and die. Keep the population alive.",
+    "There are four colors in this population. Lose all embers of one color and that allele is gone forever.",
+        "New goal: Grow the population to 50 without losing all alleles of any one color.",
+    "Be careful how much you touch the petri dish, you might introduce something unwanted."
+];
+const emberShowcase = [
+    { color: 'crimson', gender: 'female', radius: 20 },
+    { color: 'gold',    gender: 'male',   radius: 12 },
+    { color: 'blue',    gender: 'female', radius: 12 },
+    { color: 'violet',  gender: 'male',   radius: 20 },
+];
+let showcaseIndex = 0;
+let showcaseTimer = 0;
+
 export function draw(ctx) {
-        if (showMatingSuccess) {
+    if (showMatingSuccess) {
         drawMatingSuccess(ctx);
+        return;
+    }
+    if (showGoalCards) {
+        drawGoalCards(ctx);
         return;
     }
     let navY = ctx.canvas.height * 0.70;
@@ -114,6 +133,8 @@ export function isTutorialActive() {
 
 export function getStep() { return step; }
 
+export function isShowingGoalCards() { return showGoalCards; }
+
 export function isShowingMatingSuccess() {
     return showMatingSuccess;
 }
@@ -133,6 +154,66 @@ export function spawnTutorialEmbers(canvasWidth, canvasHeight) {
     return embers;
 }
 
+
+function drawGoalCards(ctx) {
+    const cx = ctx.canvas.width / 2;
+    const cy = ctx.canvas.height / 2;
+    const navY = ctx.canvas.height * 0.70;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('GENESIS: EMBER', cx, cy - 120);
+
+    // Card 2 (index 1): animated ember showcase
+    if (goalCard === 1) {
+        const ex = cx - 150;
+        const ey = cy;
+        const e = emberShowcase[showcaseIndex];
+        const rgb = BASE_COLORS[e.color];
+        const color = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 35 + Math.sin(Date.now() / 300) * 15;
+        ctx.beginPath();
+        if (e.gender === 'female') {
+            ctx.roundRect(ex - e.radius, ey - e.radius, e.radius * 2, e.radius * 2, e.radius * 0.35);
+        } else {
+            ctx.arc(ex, ey, e.radius, 0, Math.PI * 2);
+        }
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.fillStyle = 'white';
+    ctx.font = '16px sans-serif';
+    if (goalCard === 1) {
+        wrapText(ctx, goalCards[goalCard], cx + 80, cy - 20, 220, 28);
+    } else {
+        wrapText(ctx, goalCards[goalCard], cx, cy, 500, 28);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.font = '28px sans-serif';
+    ctx.shadowColor = 'white';
+    ctx.shadowBlur = 10;
+    if (goalCard > 0) {
+        ctx.fillText('◀', cx - 200, navY);
+    }
+    if (goalCard < goalCards.length - 1) {
+        ctx.fillText('▶', cx + 280, navY);
+    } else {
+        ctx.shadowBlur = 0;
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Click anywhere to begin.', cx, navY - 30);
+    }
+    ctx.shadowBlur = 0;
+    ctx.font = '16px sans-serif';
+    ctx.fillText(`${goalCard + 1} / ${goalCards.length}`, cx, navY);
+}
 
 function drawMatingSuccess(ctx) {
     const cx = ctx.canvas.width / 2;
@@ -185,6 +266,22 @@ export function handleClick(e, ctx) {
         } else {
             showMatingSuccess = false;
             matingSuccessCard = 0;
+            showGoalCards = true;
+        }
+        return;
+    }
+    if (showGoalCards) {
+        const cx = ctx.canvas.width / 2;
+        const navY = ctx.canvas.height * 0.70;
+        const clickedBack = goalCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
+        const clickedForward = goalCard < goalCards.length - 1 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
+        if (clickedBack) {
+            goalCard--;
+        } else if (clickedForward) {
+            goalCard++;
+        } else if (goalCard === goalCards.length - 1) {
+            showGoalCards = false;
+            goalCard = 0;
         }
         return;
     }
@@ -218,6 +315,13 @@ export function update(embers, dt) {
             step = TUTORIAL_STEP.GROW;
             showMatingSuccess = true;
             phase1Complete = true;
+        }
+    }
+    if (showGoalCards && goalCard === 1) {
+        showcaseTimer += dt;
+        if (showcaseTimer >= 1) {
+            showcaseIndex = (showcaseIndex + 1) % emberShowcase.length;
+            showcaseTimer = 0;
         }
     }
 };

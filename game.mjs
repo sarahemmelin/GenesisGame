@@ -1,7 +1,7 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
-import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
+import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
 
 
 
@@ -133,7 +133,7 @@ canvas.addEventListener('click', (e) => {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
         }
-    if (isShowingIntro() || isShowingMatingSuccess()) { 
+    if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) { 
         handleTutorialClick(e, ctx); 
         return; 
     }
@@ -179,7 +179,7 @@ function gameLoop(timestamp){
 
     updateTutorial(embers, dt);
 
-    if (isShowingIntro() || isShowingMatingSuccess()) {
+    if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) {
         embers.forEach(ember => ember.draw(ctx));
         drawTutorial(ctx);
         requestAnimationFrame(gameLoop);
