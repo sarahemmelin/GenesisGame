@@ -13,12 +13,15 @@ class Ember {
         this.gender = explicitAlleles 
         ? explicitAlleles.gender 
         : (Math.random() < 0.5 ? 'male' : 'female');
-        this.matingWith = null;
         this.matingTimer = 0;
         this.squishTimer = 0;
-        this.squishHeld = false;
         this.damageTint = 0;
 
+// --- flags and references ---
+        this.immortal = false;
+        this.squishHeld = false;
+        this.matingWith = null;
+        
 //--- Alleles (inherited or born with) ---
         if (parentA !== null && parentB !== null){
             const colorFromA = parentA.colorAlleles[Math.floor(Math.random() * 2)];

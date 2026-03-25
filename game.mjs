@@ -1,7 +1,7 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
-import { isShowingIntro, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
+import { spawnTutorialEmbers, isShowingIntro, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
 
 
 
@@ -26,10 +26,12 @@ let draggedEmber = null;
 let squishedEmber = null;
 
 // --- Embers --- 
-let embers = [];
-for (let i = 0; i < 10; i++){
-    embers.push(new Ember(Math.random() * canvas.width, Math.random() * canvas.height));
-}
+// let embers = [];
+// for (let i = 0; i < 10; i++){
+//     embers.push(new Ember(Math.random() * canvas.width, Math.random() * canvas.height));
+// }
+let embers = spawnTutorialEmbers(canvas.width, canvas.height);
+
 
 // --- Germs --- 
 let germs = [];
@@ -170,7 +172,7 @@ function gameLoop(timestamp){
         return;
     }
 
-    embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05));
+    embers = embers.filter(ember => ember.immortal || (ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05)));
     if (selectedEmber && !embers.includes(selectedEmber)){
         selectedEmber = null;
     };

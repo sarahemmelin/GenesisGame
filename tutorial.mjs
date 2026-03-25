@@ -1,3 +1,4 @@
+import Ember from "./ember.mjs";
 import { TUTORIAL_STEP } from "./constants.mjs";
 
 // --- State ---
@@ -93,6 +94,14 @@ export function isShowingIntro() {
      return showIntro; 
     }
 
+export function spawnTutorialEmbers(canvasWidth, canvasHeight) {
+    const embers = [];
+    let ember = new Ember(Math.random() * canvasWidth, Math.random() *canvasHeight, null, null, { color: 'blue', gender: 'male'});
+    ember.immortal = true;
+    embers.push(ember);
+return embers;
+}
+
 
 //help functions 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
@@ -113,7 +122,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
 
 
 export function handleClick(e, ctx) {
-    console.log('tutorial click', e.clientX, e.clientY);
     const cx = ctx.canvas.width / 2;
     const navY = ctx.canvas.height * 0.70;
     const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
