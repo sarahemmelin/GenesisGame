@@ -24,7 +24,6 @@ let mouseY = 0;
 let selectedEmber = null;
 let draggedEmber = null;
 let squishedEmber = null;
-const navY = canvas.height * 0.70;
 
 // --- Embers --- 
 let embers = [];
