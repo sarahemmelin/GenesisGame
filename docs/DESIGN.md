@@ -167,6 +167,8 @@ born (tiny) (not implemented)
   - [x] `matingTimer` counts to 600 ticks, then spawns offspring
   - [x] Embers separate after mating
 - [ ] Implement saturation and glow in `draw()`
+- [x] Separate genders visually: females are rounded squares, males are circles
+- [x] Delta time refactor — all timers and speeds are now seconds-based, frame-rate independent
 
 ### Germs
 - [x] Germs: large, black, spiky entities (layered rotating triangles) that the player accidentally introduces by handling the petri dish too much.

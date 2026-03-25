@@ -89,8 +89,8 @@ class Ember {
         const size1 = SIZES[this.sizeAlleles[0].value];
         const size2 = SIZES[this.sizeAlleles[1].value];
         this.radius = (size1 * this.sizeAlleles[0].strength + size2 * this.sizeAlleles[1].strength) / (this.sizeAlleles[0].strength + this.sizeAlleles[1].strength);
-        this.matingCooldown = this.radius * 20;
-        this.lifespan = this.radius * 300;
+        this.matingCooldown = 0;
+        this.lifespan = this.radius * 5;
 
 //--- Resove color (r,g,b) from color alleles ---
         const allele1 = this.colorAlleles[0];
@@ -114,25 +114,32 @@ class Ember {
         }
 
 //--- Velocity (smaller = faster) --- 
-        this.vx = ((Math.random() -0.5) * (40/ this.radius));
-        this.vy = ((Math.random() -0.5) * (40/ this.radius));
+        this.vx = ((Math.random() - 0.5) * (2400 / this.radius));
+        this.vy = ((Math.random() - 0.5) * (2400 / this.radius));
     }
 
 
-//=== Functions ====== 
+//=== Functions ======
+    tracePath(ctx, x, y, r) {
+        ctx.beginPath();
+        if (this.gender === 'female') {
+            ctx.roundRect(x - r, y - r, r * 2, r * 2, r * 0.35);
+        } else {
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+        }
+    }
+
     draw(ctx, isSelected) {
     const alpha = this.damageTint > 0 ? 0.3 + Math.sin(this.damageTint * 1.5) * 0.4 : 1;
     if (this.damageTint > 0) this.damageTint--;
     const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
-    const displayRadius = this.age < 600 ? 5 + (this.radius - 5) * (this.age / 600) : this.radius;
+    const displayRadius = this.age < 10 ? 5 + (this.radius - 5) * (this.age / 10) : this.radius;
     this.displayRadius = displayRadius;
-
 
     if (isSelected){
         ctx.shadowColor = 'white';
         ctx.shadowBlur = 30;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
+        this.tracePath(ctx, this.x, this.y, displayRadius);
         ctx.fillStyle = color;
         ctx.fill();
     }
@@ -144,8 +151,7 @@ class Ember {
         this.drawSquish(ctx, color, displayRadius);
     } else {
         ctx.globalAlpha = alpha;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, displayRadius, 0, Math.PI * 2);
+        this.tracePath(ctx, this.x, this.y, displayRadius);
         ctx.fillStyle = color;
         ctx.fill();
         ctx.globalAlpha = 1;
@@ -153,67 +159,53 @@ class Ember {
 }
 
 drawSquish(ctx, color, displayRadius) {
-    const flatness = this.squishTimer > 50 ? (60 - this.squishTimer) / 10 : 1;
-    const alpha = this.squishTimer <= 50 && !this.squishHeld ? this.squishTimer / 50 : 1;
+    const flatness = this.squishTimer > 0.8 ? (1.0 - this.squishTimer) / 0.2 : 1;
+    const alpha = this.squishTimer <= 0.8 && !this.squishHeld ? this.squishTimer / 0.8 : 1;
     const scaleX = 1 + flatness * 1.5;
     const scaleY = 1 - flatness * 0.8;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(this.x, this.y);
     ctx.scale(scaleX, scaleY);
-    ctx.beginPath();
-    ctx.arc(0, 0, displayRadius, 0, Math.PI * 2);
+    this.tracePath(ctx, 0, 0, displayRadius);
     ctx.fillStyle = color;
     ctx.fill();
     ctx.restore();
     ctx.globalAlpha = 1;
 }
 
-update(width, height){
+update(width, height, dt){
     if (this.squishTimer > 0 && !this.squishHeld) {
-        this.squishTimer--;
-    return;
+        this.squishTimer -= dt;
+        return;
     }
-    if (this.squishHeld && this.squishTimer <= 50) return;
+    if (this.squishHeld && this.squishTimer <= 0.8) return;
 
     if (this.matingWith !== null && this.gender === 'female'){
-    return;
+        return;
     }
     if (this.matingWith !== null && this.gender === 'male') {
         const distanceX = this.x - this.matingWith.x;
         const distanceY = this.y - this.matingWith.y;
         const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
         const targetDist = this.radius + this.matingWith.radius;
-        const stretch = Math.sin(this.matingTimer * 3 / this.radius) * 3;
+        const stretch = Math.sin(this.matingTimer * 180 / this.radius) * 3;
         this.x = this.matingWith.x + distanceX / distance * (targetDist + stretch);
         this.y = this.matingWith.y + distanceY / distance * (targetDist + stretch);
-        this.matingTimer++;
+        this.matingTimer += dt;
         return;
     }
 
-    if (this.x > width){
-        this.vx = -this.vx;
-    };
+    if (this.x > width) this.vx = -this.vx;
+    if (this.x < 0)     this.vx = -this.vx;
+    if (this.y > height) this.vy = -this.vy;
+    if (this.y < 0)      this.vy = -this.vy;
 
-    if (this.x < 0){
-        this.vx = -this.vx;
-    };
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.age += dt;
 
-    if (this.y > height){
-        this.vy = -this.vy;
-    };
-
-    if (this.y < 0){
-        this.vy = -this.vy;
-    };
-
-    this.x += this.vx;
-    this.y += this.vy;
-    this.age += 1;
-
-    if (this.matingCooldown > 0){
-        this.matingCooldown--;
-    };
+    if (this.matingCooldown > 0) this.matingCooldown -= dt;
 }
 } 
 
