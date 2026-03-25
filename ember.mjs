@@ -2,7 +2,7 @@ import { SIZES, BASE_COLORS } from './constants.mjs';
 import Allele from './allele.mjs';
 
 class Ember {
-    constructor(x,y, parentA = null, parentB = null){
+    constructor(x,y, parentA = null, parentB = null, explicitAlleles = null){
         const colorKeys = Object.keys(BASE_COLORS);
         const sizeKeys = Object.keys(SIZES);
 
@@ -10,7 +10,9 @@ class Ember {
         this.x = x;
         this.y = y;
         this.age = 0;
-        this.gender = Math.random() < 0.5 ? 'male' : 'female';
+        this.gender = explicitAlleles 
+        ? explicitAlleles.gender 
+        : (Math.random() < 0.5 ? 'male' : 'female');
         this.matingWith = null;
         this.matingTimer = 0;
         this.squishTimer = 0;
@@ -53,7 +55,33 @@ class Ember {
                 new Allele(flickerAlleleFromA.gene, flickerAlleleFromA.value, flickerAlleleFromA.strength),
                 new Allele(flickerAlleleFromB.gene, flickerAlleleFromB.value, flickerAlleleFromB.strength)
             ];
+        } else if (explicitAlleles){
+        this.colorAlleles = [
+            new Allele('baseColor', explicitAlleles.color),
+            new Allele('baseColor', explicitAlleles.color)
+        ];
 
+        this.sizeAlleles = [
+            new Allele('baseSize', 
+            sizeKeys[Math.floor(Math.random() * sizeKeys.length)]),
+            new Allele('baseSize',
+            sizeKeys[Math.floor(Math.random() * sizeKeys.length)])
+        ];
+
+        this.saturationAlleles = [
+            new Allele('baseSaturation', Math.random()),
+            new Allele('baseSaturation', Math.random())
+        ];
+
+        this.glowAlleles = [
+            new Allele('baseGlow', Math.random()),
+            new Allele('baseGlow', Math.random())
+        ];
+
+        this.flickerAlleles = [
+            new Allele('baseFlicker', Math.random() * 0.01),
+            new Allele('baseFlicker', Math.random() * 0.01)
+        ];
         } else {
         this.sizeAlleles = [
             new Allele('baseSize', 

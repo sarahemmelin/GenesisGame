@@ -1,6 +1,9 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
-import { BASE_COLORS } from "./constants.mjs";
+import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
+import { isShowingIntro, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
+
+
 
 //--- Canvas setup ---
 const canvas = document.getElementById('canvas');
@@ -38,9 +41,6 @@ let epistasisEmberFound = false;
 let showEpistasisPopup = false;
 let epistasisCard = 0;
 let showBonusCard = false;
-let introSeen = false;
-let showIntroPopup = false;
-let introCard = 0;
 let squishMode = false; 
 let lifetimeEmberCount = embers.length;
 let clicksSinceLastGerm = 0;
@@ -52,15 +52,6 @@ let epistasisCards = [
     "Something just happened. An unusual ember was born. Can you find it?",
     "Even though the color alleles inherited from its parents did not change, a separate gene, 'the flicker gene', switched one color channel off at birth.",
     "This is called epistasis. One gene can silence another. The color is still in the DNA, just not showing. This is why appearance alone can't tell you what genes a creature carries."
-];
-
-// --- introcards --- 
-const introCards = [
-    "This is an Ember. It's a tiny creature living in your petri dish.",
-    "These Embers are diploid, meaning each carries two color alleles, one inherited from each parent.",
-    "Each allele has a strength, how loudly it expresses. Here, blue (0.70) dominates gold (0.30), blending into green. The stronger allele expresses itself louder.",
-    "An allele with strength 0.00 is still there, just 'silent'. It can be passed on and grow stronger in future generations.",
-    "Click any Ember to inspect its genes. Then watch what happens when they meet."
 ];
 
 
@@ -141,13 +132,21 @@ canvas.addEventListener('click', (e) => {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
         }
-        if (showIntroPopup) { handleIntroClick(e); return; }
-        if (showEpistasisPopup) { handleEpistasisClick(e); return; }
-        handleGermSpawn(e);
-        const clickedEmber = embers.find(ember => {
-        const dx = ember.x - e.offsetX;
-        const dy = ember.y - e.offsetY;
-        return Math.sqrt(dx * dx + dy * dy) < ember.radius;
+    if (isShowingIntro()) { 
+        handleTutorialClick(e, ctx); 
+        return; 
+    }
+
+    if (showEpistasisPopup) {
+        handleEpistasisClick(e); 
+        return; 
+    }
+
+    handleGermSpawn(e);
+    const clickedEmber = embers.find(ember => {
+    const dx = ember.x - e.offsetX;
+    const dy = ember.y - e.offsetY;
+    return Math.sqrt(dx * dx + dy * dy) < ember.radius;
     });
     if (clickedEmber){
          selectedEmber = clickedEmber;    
@@ -165,31 +164,24 @@ function gameLoop(timestamp){
 
 //--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-if (showEpistasisPopup) {
-    embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-    drawEpistasisPopup();
-    requestAnimationFrame(gameLoop);
-    return;
-}
+    if (showEpistasisPopup) {
+        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
+        drawEpistasisPopup();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
 
     embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05));
     if (selectedEmber && !embers.includes(selectedEmber)){
         selectedEmber = null;
     };
 
-
-    if (!introSeen && embers.every(ember => ember.age >= 10)) {
-        introSeen = true;
-        showIntroPopup = true;
-    }
-
-    if (showIntroPopup) {
+    if (isShowingIntro()) {
         embers.forEach(ember => ember.draw(ctx));
-        drawIntroPopup();
+        drawTutorial(ctx);
         requestAnimationFrame(gameLoop);
     return;
     }
-
 
     if (embers.length === 0) {
         ctx.fillStyle = 'red';
@@ -383,79 +375,8 @@ function drawEpistasisPopup(){
     ctx.shadowBlur = 0;
 }
 
-function drawIntroPopup() {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('GENESIS: EMBER', canvas.width / 2, canvas.height / 2 - 120);
-
-    if (introCard === 0 || introCard === 1 || introCard === 2 || introCard === 3) {
-        const ex = canvas.width / 2 - 150;
-        const ey = canvas.height / 2;
-        const er = 20;
-        const color = introCard === 3 ? 'rgb(0, 180, 216)' : 'rgb(70, 208, 98)';
-
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 35 + Math.sin(Date.now() /  300) * 15;
-        ctx.beginPath();
-        ctx.arc(ex, ey, er, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-    if (introCard === 1 || introCard === 2 || introCard === 3) {
-        ctx.font = '13px monospace';
-        ctx.textAlign = 'left';
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'rgb(0, 180, 216)';
-        ctx.beginPath();
-        ctx.arc(ex + er + 16, ey - 12, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        const blueLabel = introCard === 3 ? 'Allele 1: blue (1.00)' : 'Allele 1: blue (0.70)';
-        ctx.fillText(blueLabel, ex + er + 26, ey - 8);
-        ctx.fillStyle = introCard === 3 ? 'rgb(100, 85, 0)' : 'rgb(255, 215, 0)';
-        ctx.beginPath();
-        ctx.arc(ex + er + 16, ey + 8, 5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = 'white';
-        const goldLabel = introCard === 3 ? 'Allele 2: gold (0.00)' : 'Allele 2: gold (0.30)';
-        ctx.fillText(goldLabel, ex + er + 26, ey + 12);
-    }
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = 'white';
-        ctx.font = '16px sans-serif';
-        wrapText(ctx, introCards[introCard], canvas.width / 2 + 80, canvas.height / 2 - 20, 220, 28);
-    } else {
-        ctx.font = '16px sans-serif';
-        wrapText(ctx, introCards[introCard], canvas.width / 2, canvas.height / 2, 500, 28);
-    }
-    ctx.textAlign = 'center';
-    ctx.font = '28px sans-serif';
-    ctx.shadowColor = 'white';
-    ctx.shadowBlur = 10;
-    if (introCard > 0) {
-        ctx.fillText('◀', canvas.width / 2 - 200, navY);
-    }
-    if (introCard < introCards.length - 1) {
-        ctx.fillText('▶', canvas.width / 2 + 280, navY);
-    } else {
-        ctx.shadowBlur = 0;
-        ctx.font = '16px sans-serif';
-        ctx.fillText('Click anywhere to continue.', canvas.width / 2, navY - 30);
-    }
-    ctx.shadowBlur = 0;
-    ctx.font = '16px sans-serif';
-    ctx.fillText(`${introCard + 1} / ${introCards.length}`, canvas.width / 2, navY );
-
-}
-
 function drawEmberInfoPanel(){
-    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup || showIntroPopup) return;
+    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup) return;
 
     const panelWidth = 200;
     const panelHeight = 120;
@@ -547,20 +468,6 @@ function drawModeButtons(){
     ctx.fillText('[ grab ]', btnX + 10, btnY + 20);
     ctx.fillStyle = squishMode ? 'white' : '#555';
     ctx.fillText('[ squish ]', btnX + 10, btnY + 40);
-}
-
-function handleIntroClick(e) {
-    const cx = canvas.width / 2;
-    const clickedBack = introCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
-    const clickedForward = introCard < introCards.length - 1 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
-    if (clickedBack) {
-    introCard--;
-    } else if (clickedForward) {
-    introCard++; 
-    }
-    else if (introCard === introCards.length - 1) { 
-    showIntroPopup = false; introCard = 0; 
-    }
 }
 
 function handleEpistasisClick(e) {
