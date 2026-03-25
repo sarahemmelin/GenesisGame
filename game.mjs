@@ -1,5 +1,6 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
+import { BASE_COLORS } from "./constants.mjs";
 
 //--- Canvas setup ---
 const canvas = document.getElementById('canvas');
@@ -113,7 +114,7 @@ canvas.addEventListener('mousedown', (e) => {
             return Math.sqrt(dx * dx + dy * dy) < ember.radius + 5;
         });
         if (squishedEmber && squishedEmber.squishTimer === 0){ 
-            squishedEmber.squishTimer = 60; squishedEmber.squishHeld = true; 
+            squishedEmber.squishTimer = 1.0; squishedEmber.squishHeld = true;
         }
         return;
     }
@@ -157,7 +158,11 @@ canvas.addEventListener('click', (e) => {
 ;})
 
 
-function gameLoop(){
+let lastTime = 0;
+function gameLoop(timestamp){
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    lastTime = timestamp;
+
 //--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 if (showEpistasisPopup) {
@@ -167,13 +172,13 @@ if (showEpistasisPopup) {
     return;
 }
 
-    embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 1));
+    embers = embers.filter(ember => ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05));
     if (selectedEmber && !embers.includes(selectedEmber)){
         selectedEmber = null;
     };
 
 
-    if (!introSeen && embers.every(ember => ember.age >= 600)) {
+    if (!introSeen && embers.every(ember => ember.age >= 10)) {
         introSeen = true;
         showIntroPopup = true;
     }
@@ -216,7 +221,7 @@ if (showEpistasisPopup) {
         if (
             distance < 50 &&
             a.gender !== b.gender &&
-            a.age > 600 && b.age > 600 &&
+            a.age > 10 && b.age > 10 &&
             a.matingCooldown <= 0 && b.matingCooldown <= 0 &&
              a.matingWith === null && b.matingWith === null
         ) {
@@ -236,7 +241,7 @@ if (showEpistasisPopup) {
     }
 //--- After mating: Spawn offspring + separate embers ---
     embers.forEach(ember => {
-    if (ember.gender === 'male' && ember.matingTimer >= 600) {
+    if (ember.gender === 'male' && ember.matingTimer >= 10) {
         const roll = Math.random();
         let count;
         if (roll < 0.05) {
@@ -268,10 +273,10 @@ if (showEpistasisPopup) {
         }
         const female = ember.matingWith;
         female.matingWith = null;
-        female.matingCooldown = 1000;
+        female.matingCooldown = female.radius * 0.85;
         ember.matingWith = null;
         ember.matingTimer = 0;
-        ember.matingCooldown = 200;
+        ember.matingCooldown = ember.radius * 0.15;
 
 
     }
@@ -280,19 +285,19 @@ if (showEpistasisPopup) {
 
 germs = germs.filter(germ => germ.age < germ.lifespan);
 germs.forEach(germ => {
-    germ.update(canvas.width, canvas.height);
+    germ.update(canvas.width, canvas.height, dt);
     germ.draw(ctx);
 });
-applyGermDamage();
+applyGermDamage(dt);
 
 
 
 //--- Update and draw all embers ---
     embers.forEach(ember => {
         if (ember !== draggedEmber){
-            ember.update(canvas.width, canvas.height);
+            ember.update(canvas.width, canvas.height, dt);
         }
-        ember.draw(ctx, ember === selectedEmber);       
+        ember.draw(ctx, ember === selectedEmber);
     })
 
     //Fixation
@@ -334,7 +339,7 @@ applyGermDamage();
 
 //--- drawing UI ----
 
-    drawEmberInfoPanel(Object.keys(alleleCounts).length);
+    drawEmberInfoPanel();
     drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
     drawModeButtons();
     requestAnimationFrame(gameLoop);
@@ -389,7 +394,6 @@ function drawIntroPopup() {
     ctx.fillText('GENESIS: EMBER', canvas.width / 2, canvas.height / 2 - 120);
 
     if (introCard === 0 || introCard === 1 || introCard === 2 || introCard === 3) {
-        // Ember diagram
         const ex = canvas.width / 2 - 150;
         const ey = canvas.height / 2;
         const er = 20;
@@ -403,7 +407,6 @@ function drawIntroPopup() {
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Allele labels only on cards 1 and 2
     if (introCard === 1 || introCard === 2 || introCard === 3) {
         ctx.font = '13px monospace';
         ctx.textAlign = 'left';
@@ -423,9 +426,6 @@ function drawIntroPopup() {
         const goldLabel = introCard === 3 ? 'Allele 2: gold (0.00)' : 'Allele 2: gold (0.30)';
         ctx.fillText(goldLabel, ex + er + 26, ey + 12);
     }
-
-
-        // Right column: card text
         ctx.shadowBlur = 0;
         ctx.fillStyle = 'white';
         ctx.font = '16px sans-serif';
@@ -454,12 +454,21 @@ function drawIntroPopup() {
 
 }
 
-function drawEmberInfoPanel(alleleCount = 0){
- if (!selectedEmber) {
-    return;
- }
-    const panelX = canvas.width -230;
-    const panelY = 170 + alleleCount * 20;
+function drawEmberInfoPanel(){
+    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup || showIntroPopup) return;
+
+    const panelWidth = 200;
+    const panelHeight = 120;
+    const offset = (selectedEmber.displayRadius ?? selectedEmber.radius) + 15;
+
+    const placeOnRight = selectedEmber.x < canvas.width / 2;
+    let panelX = placeOnRight
+        ? selectedEmber.x + offset
+        : selectedEmber.x - offset - panelWidth;
+    let panelY = selectedEmber.y - panelHeight / 2;
+
+    if (panelY < 0) panelY = 0;
+    if (panelY + panelHeight > canvas.height) panelY = canvas.height - panelHeight;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
@@ -472,7 +481,7 @@ function drawEmberInfoPanel(alleleCount = 0){
     ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
     ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, panelX + 10, panelY + 60);
     ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
-    const cooldownText = selectedEmber.matingCooldown > 0 ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown / 60)}s` : 'Ready';
+    const cooldownText = selectedEmber.matingCooldown > 0 ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s` : 'Ready';
     ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + 100);
 
 }
@@ -512,14 +521,18 @@ function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femal
     ctx.fillText(`Population: ${embers.length}`, panelX + 10, panelY + 20);
 
     ctx.fillText(`Allele pool:`, panelX + 10, panelY + 40);
-    Object.entries(alleleCounts).forEach(([color, count], i) => {
-        ctx.fillText(`${color}: ${count}`, panelX + 30, panelY + 60 + i * 20);
+    const colorKeys = Object.keys(BASE_COLORS);
+    colorKeys.forEach((color, i) => {
+        const count = alleleCounts[color];
+        ctx.fillStyle = count ? 'white' : 'red';
+        ctx.fillText(count ? `${color}: ${count}` : `${color}: extinct`, panelX + 30, panelY + 60 + i * 20);
     });
+    ctx.fillStyle = 'white';
 
-    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
-    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
-    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 60);
-    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
+    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 20);
+    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 40);
+    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 60);
+    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 80);
 
 }
 
@@ -554,7 +567,10 @@ function handleEpistasisClick(e) {
     if (showBonusCard) {
         const closeX = canvas.width / 2;
         const closeY = canvas.height / 2 + 100;
-        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) showBonusCard = false;
+        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) {
+            showBonusCard = false;
+            epistasisCard = 1; 
+        }
         return;
     }
     const de = selectedEmber;
@@ -592,14 +608,14 @@ function handleGermSpawn(e){
     }
 }
 
-function applyGermDamage(){
+function applyGermDamage(dt){
     germs.forEach(germ => {
     embers.forEach(ember => {
         const dx = ember.x - germ.x;
         const dy = ember.y - germ.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < germ.radius + ember.radius) {
-            ember.lifespan -= 15;
+            ember.lifespan -= 15 * dt;
             ember.damageTint = 50;
         }
     });

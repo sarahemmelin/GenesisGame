@@ -3,20 +3,22 @@ class Germ {
         this.x = x;
         this.y = y;
         this.age = 0;
-        this.lifespan = 1800 + Math.random() * 1800;
+        this.lifespan = 30 + Math.random() * 30;
         this.radius = 40 + Math.random() * 20;
-        this.vx = (Math.random() - 0.5) * 10;
-        this.vy = (Math.random() - 0.5) * 10;
+        this.vx = (Math.random() - 0.5) * 600;
+        this.vy = (Math.random() - 0.5) * 600;
         this.rotation = 0;
     }
 
-    update(width, height) {
-        if (this.x > width || this.x < 0) this.vx = -this.vx;
-        if (this.y > height || this.y < 0) this.vy = -this.vy;
-        this.x += this.vx;
-        this.y += this.vy;
-        this.rotation += 0.005;
-        this.age++;
+    update(width, height, dt) {
+        if (this.x > width - 230) { this.vx = -Math.abs(this.vx); this.x = width - 230; }
+        if (this.x < 0)           { this.vx =  Math.abs(this.vx); this.x = 0; }
+        if (this.y > height)      { this.vy = -Math.abs(this.vy); this.y = height; }
+        if (this.y < 0)           { this.vy =  Math.abs(this.vy); this.y = 0; }
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.rotation += 0.3 * dt;
+        this.age += dt;
     }
 
 draw(ctx) {
