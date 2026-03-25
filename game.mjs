@@ -1,5 +1,6 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
+import { BASE_COLORS } from "./constants.mjs";
 
 //--- Canvas setup ---
 const canvas = document.getElementById('canvas');
@@ -272,10 +273,10 @@ if (showEpistasisPopup) {
         }
         const female = ember.matingWith;
         female.matingWith = null;
-        female.matingCooldown = 17;
+        female.matingCooldown = female.radius * 0.85;
         ember.matingWith = null;
         ember.matingTimer = 0;
-        ember.matingCooldown = 3;
+        ember.matingCooldown = ember.radius * 0.15;
 
 
     }
@@ -520,14 +521,18 @@ function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femal
     ctx.fillText(`Population: ${embers.length}`, panelX + 10, panelY + 20);
 
     ctx.fillText(`Allele pool:`, panelX + 10, panelY + 40);
-    Object.entries(alleleCounts).forEach(([color, count], i) => {
-        ctx.fillText(`${color}: ${count}`, panelX + 30, panelY + 60 + i * 20);
+    const colorKeys = Object.keys(BASE_COLORS);
+    colorKeys.forEach((color, i) => {
+        const count = alleleCounts[color];
+        ctx.fillStyle = count ? 'white' : 'red';
+        ctx.fillText(count ? `${color}: ${count}` : `${color}: extinct`, panelX + 30, panelY + 60 + i * 20);
     });
+    ctx.fillStyle = 'white';
 
-    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 20);
-    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 40);
-    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 60);
-    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + Object.keys(alleleCounts).length * 20 + 80);
+    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 20);
+    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 40);
+    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 60);
+    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 80);
 
 }
 

@@ -11,8 +11,10 @@ class Germ {
     }
 
     update(width, height, dt) {
-        if (this.x > width || this.x < 0) this.vx = -this.vx;
-        if (this.y > height || this.y < 0) this.vy = -this.vy;
+        if (this.x > width - 230) { this.vx = -Math.abs(this.vx); this.x = width - 230; }
+        if (this.x < 0)           { this.vx =  Math.abs(this.vx); this.x = 0; }
+        if (this.y > height)      { this.vy = -Math.abs(this.vy); this.y = height; }
+        if (this.y < 0)           { this.vy =  Math.abs(this.vy); this.y = 0; }
         this.x += this.vx * dt;
         this.y += this.vy * dt;
         this.rotation += 0.3 * dt;

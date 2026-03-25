@@ -102,6 +102,15 @@ class Ember {
         this.g = (rgb1.g * allele1.strength + rgb2.g * allele2.strength) / (allele1.strength + allele2.strength);
         this.b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / (allele1.strength + allele2.strength);
 
+//--- Resolve saturation and glow from alleles ---
+        const sat1 = this.saturationAlleles[0];
+        const sat2 = this.saturationAlleles[1];
+        this.saturation = (sat1.value * sat1.strength + sat2.value * sat2.strength) / (sat1.strength + sat2.strength);
+
+        const glow1 = this.glowAlleles[0];
+        const glow2 = this.glowAlleles[1];
+        this.glow = (glow1.value * glow1.strength + glow2.value * glow2.strength) / (glow1.strength + glow2.strength);
+
 //--- Flicker epistatis (chance to zero out one color channel at spawn) --- 
         const flickerStrength = (this.flickerAlleles[0].strength + this.flickerAlleles[1].strength) / 2;
         if (Math.random() < flickerStrength) {
@@ -196,10 +205,10 @@ update(width, height, dt){
         return;
     }
 
-    if (this.x > width) this.vx = -this.vx;
-    if (this.x < 0)     this.vx = -this.vx;
-    if (this.y > height) this.vy = -this.vy;
-    if (this.y < 0)      this.vy = -this.vy;
+    if (this.x > width - 230) { this.vx = -Math.abs(this.vx); this.x = width - 230; }
+    if (this.x < 0)           { this.vx =  Math.abs(this.vx); this.x = 0; }
+    if (this.y > height)      { this.vy = -Math.abs(this.vy); this.y = height; }
+    if (this.y < 0)           { this.vy =  Math.abs(this.vy); this.y = 0; }
 
     this.x += this.vx * dt;
     this.y += this.vy * dt;

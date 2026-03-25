@@ -1,6 +1,12 @@
 class Allele {
     constructor(gene, value, strength = null){
-        //todo: add guard clauses for gene and value (errorhandler)
+        if (!gene) {
+            throw new Error(`Allele requires a gene, got: ${gene}`);
+        }
+        if (value === undefined || value === null) {
+            throw new Error(`Allele requires a value, got: ${value}`);
+        }
+        
         this.gene = gene;
         this.value = value;
         this.strength = strength !== null ?

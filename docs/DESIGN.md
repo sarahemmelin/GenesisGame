@@ -116,8 +116,8 @@ born (tiny) (not implemented)
 - [x] Add population counter UI
 - [x] Add gender counter to the UI
 - [x] Hightlight around selected Ember
-- [ ] Extinct panel when Allele is extinct
-- [ ] Embers and germs should not be able to move behind panels.
+- [x] Extinct allele shown in red in population panel ("violet: extinct")
+- [x] Embers and germs should not be able to move behind panels.
 - [x] The panel for the individual Ember should follow the Ember (be placed near it). Hidden while dragging and during popups.
 - [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small.
 - [x] Decrease flicker ratio + add epistasis popup with game freeze on first flicker event
@@ -133,11 +133,11 @@ born (tiny) (not implemented)
 - [x] Design mating / reproduction system
 - [x] Detect color fixation (all embers same color) → trigger lose condition
 - [x] Cooldown timer on just-mated
-- [ ] Add guard clauses to `Allele` constructor
+- [x] Add guard clauses to `Allele` constructor
 - [ ] Add mutation trigger when strength < 0.1
 - [ ] Decide sterility percentage
 - [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting
-- [ ] Mating cooldown tied to radius (larger = longer cooldown)
+- [x] Mating cooldown tied to radius (larger = longer cooldown)
 - [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
   - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
 - [ ] Win conditions:
@@ -166,7 +166,7 @@ born (tiny) (not implemented)
   - [x] Wiggle animation while mating (male wiggles, female stays still)
   - [x] `matingTimer` counts to 600 ticks, then spawns offspring
   - [x] Embers separate after mating
-- [ ] Implement saturation and glow in `draw()`
+- [ ] Implement saturation and glow in `draw()` — alleles are resolved at birth, visual effect TBD
 - [x] Separate genders visually: females are rounded squares, males are circles
 - [x] Delta time refactor — all timers and speeds are now seconds-based, frame-rate independent
 
