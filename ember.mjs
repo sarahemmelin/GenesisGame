@@ -171,7 +171,9 @@ class Ember {
 
     draw(ctx, isSelected) {
     const alpha = this.damageTint > 0 ? 0.3 + Math.sin(this.damageTint * 1.5) * 0.4 : 1;
-    if (this.damageTint > 0) this.damageTint--;
+    if (this.damageTint > 0) {
+        this.damageTint--;
+    }
     const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
     const displayRadius = this.age < 10 ? 5 + (this.radius - 5) * (this.age / 10) : this.radius;
     this.displayRadius = displayRadius;
@@ -226,7 +228,9 @@ update(width, height, dt){
         this.squishTimer -= dt;
         return;
     }
-    if (this.squishHeld && this.squishTimer <= 0.8) return;
+    if (this.squishHeld && this.squishTimer <= 0.8) {
+        return;
+    }
 
     if (this.matingWith !== null && this.gender === 'female'){
         return;
@@ -252,7 +256,9 @@ update(width, height, dt){
     this.y += this.vy * dt;
     this.age += dt;
 
-    if (this.matingCooldown > 0) this.matingCooldown -= dt;
+    if (this.matingCooldown > 0) {
+        this.matingCooldown -= dt;
+    }
 }
 } 
 

@@ -276,7 +276,9 @@ export function handleClick(e, ctx) {
         const cy = ctx.canvas.height / 2;
         if (matingSuccessCard < matingSuccessCards.length - 1) {
             const clickedForward = Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 20)) < 30;
-            if (clickedForward) matingSuccessCard++;
+            if (clickedForward) {
+                matingSuccessCard++;
+            }
         } else {
             showMatingSuccess = false;
             matingSuccessCard = 0;

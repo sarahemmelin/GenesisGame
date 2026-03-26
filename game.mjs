@@ -1,7 +1,7 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
-import { CURSOR_OPEN, CURSOR_PINCH, CURSOR_POINT } from "./cursors.mjs";
+import { CURSOR_OPEN, CURSOR_PINCH, CURSOR_POINT, CURSOR_OPEN_GLOVE, CURSOR_PINCH_GLOVE, CURSOR_POINT_GLOVE } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
 
@@ -47,10 +47,24 @@ let virusOutbreakInterval = 180 + Math.random() * 120;
 
 // --- flags and references ---
 let phase2Started = false;
+let glovesRemaining = 3;
+let glovesActive = false;
+let glovesTimer = 0;
+let glovesUnlocked = false;
+let petriClickCount = 0;
+let showGermIntroPopup = false;
+let germIntroSeen = false;
+let germIntroCard = 0;
+let tutorialGermsActive = false;
+let tutorialGermsKilled = 0;
+let glovePopupTimer = 0;
+let showGlovesPopup = false;
+let glovesPopupCard = 0;
 let showExtinctPopup = false;
 let extinctColor = '';
 let showPhase2Win = false;
 let phase2WinSeen = false;
+let phase2WinCard = 0;
 let epistasisSeen = false;
 let epistasisEmberFound = false;
 let showEpistasisPopup = false;
@@ -78,11 +92,11 @@ canvas.addEventListener('mousemove', (e) => {
         draggedEmber.y = mouseY;
     }
     if (phase2Started && (squishMode || e.shiftKey)) {
-        canvas.style.cursor = CURSOR_POINT;
+        canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
-        canvas.style.cursor = CURSOR_PINCH;
+        canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
     } else {
-        canvas.style.cursor = CURSOR_OPEN;
+        canvas.style.cursor = glovesActive ? CURSOR_OPEN_GLOVE : CURSOR_OPEN;
     }
     if (squishedEmber) {
     const dx = squishedEmber.x - mouseX;
@@ -111,8 +125,11 @@ canvas.addEventListener('mousedown', (e) => {
     return Math.sqrt(dx * dx + dy * dy) < germ.radius;
     });
     if (germIndex !== -1) {
+        if (germs[germIndex].tutorialGerm && tutorialGermsActive) {
+            tutorialGermsKilled++;
+        }
         germs.splice(germIndex, 1);
-    return;
+        return;
     }
         squishedEmber = embers.find(ember => {
             const dx = ember.x - e.clientX;
@@ -129,15 +146,23 @@ canvas.addEventListener('mousedown', (e) => {
         const dy = ember.y - e.clientY;
         return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
     });
-    if (draggedEmber) selectedEmber = draggedEmber;
+    if (draggedEmber) {
+        selectedEmber = draggedEmber;
+    }
 });
 
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Shift' && phase2Started) canvas.style.cursor = CURSOR_POINT;
+    if (e.key === 'Shift' && phase2Started) {
+        canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
+    }
 });
 document.addEventListener('keyup', (e) => {
-    if (e.key === 'Shift' && phase2Started) canvas.style.cursor = squishMode ? CURSOR_POINT : CURSOR_OPEN;
+    if (e.key === 'Shift' && phase2Started) {
+        canvas.style.cursor = squishMode
+            ? (glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT)
+            : (glovesActive ? CURSOR_OPEN_GLOVE  : CURSOR_OPEN);
+    }
 });
 
 canvas.addEventListener('mouseup', () => {
@@ -154,6 +179,14 @@ canvas.addEventListener('click', (e) => {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
         }
+    if (glovesUnlocked && !glovesActive && glovesRemaining > 0 &&
+        e.offsetX >= btnX && e.offsetX <= btnX + 160 &&
+        e.offsetY >= btnY + 58 && e.offsetY <= btnY + 88) {
+            glovesActive = true;
+            glovesTimer = 60;
+            glovesRemaining--;
+            return;
+        }
     if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) { 
         handleTutorialClick(e, ctx); 
         return; 
@@ -163,14 +196,60 @@ canvas.addEventListener('click', (e) => {
         handleEpistasisClick(e);
         return;
     }
+    if (showGlovesPopup) {
+        const cx = canvas.width / 2;
+        const navY = canvas.height * 0.70;
+        const clickedForward = glovesPopupCard === 0 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
+        const clickedBack = glovesPopupCard === 1 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
+        if (clickedForward) {
+            glovesPopupCard = 1;
+        } else if (clickedBack) {
+            glovesPopupCard = 0;
+        } else if (glovesPopupCard === 1) {
+            showGlovesPopup = false;
+            glovesPopupCard = 0;
+        }
+        return;
+    }
+    if (showGermIntroPopup) {
+        const cx = canvas.width / 2;
+        const navY = canvas.height * 0.70;
+        const clickedForward = germIntroCard === 0 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
+        const clickedBack = germIntroCard === 1 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
+        if (clickedForward) {
+            germIntroCard = 1;
+        } else if (clickedBack) {
+            germIntroCard = 0;
+        } else if (germIntroCard === 1) {
+            showGermIntroPopup = false;
+            germIntroCard = 0;
+            tutorialGermsActive = true;
+            germs.push(new Germ(Math.random() * canvas.width * 0.6 + canvas.width * 0.2, Math.random() * canvas.height * 0.6 + canvas.height * 0.2));
+            germs.push(new Germ(Math.random() * canvas.width * 0.6 + canvas.width * 0.2, Math.random() * canvas.height * 0.6 + canvas.height * 0.2));
+            germs[germs.length - 2].tutorialGerm = true;
+            germs[germs.length - 1].tutorialGerm = true;
+        }
+        return;
+    }
     if (showExtinctPopup) {
         restartPhase2();
         return;
     }
     if (showPhase2Win) {
-        showPhase2Win = false;
-        phase2WinSeen = true;
-        triggerVirusOutbreak();
+        const cx = canvas.width / 2;
+        const navY = canvas.height * 0.70;
+        const clickedForward = phase2WinCard === 0 && Math.abs(e.clientX - (cx + 280)) < 50 && Math.abs(e.clientY - navY) < 30;
+        const clickedBack = phase2WinCard === 1 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - navY) < 30;
+        if (clickedForward) {
+            phase2WinCard = 1;
+        } else if (clickedBack) {
+            phase2WinCard = 0;
+        } else if (phase2WinCard === 1) {
+            showPhase2Win = false;
+            phase2WinCard = 0;
+            phase2WinSeen = true;
+            triggerVirusOutbreak();
+        }
         return;
     }
 
@@ -202,6 +281,18 @@ function gameLoop(timestamp){
         requestAnimationFrame(gameLoop);
         return;
     }
+    if (showGermIntroPopup) {
+        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
+        drawGermIntroPopup();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    if (showGlovesPopup) {
+        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
+        drawGlovesPopup();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
     if (showExtinctPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawExtinctPopup();
@@ -219,6 +310,11 @@ function gameLoop(timestamp){
     if (selectedEmber && !embers.includes(selectedEmber)){
         selectedEmber = null;
     };
+    embers.forEach(ember => {
+        if (ember.matingWith !== null && !embers.includes(ember.matingWith)) {
+            ember.matingWith = null;
+        }
+    });
 
     updateTutorial(embers, dt);
 
@@ -340,6 +436,28 @@ germs.forEach(germ => {
 });
 applyGermDamage(dt);
 
+if (glovesActive) {
+    glovesTimer -= dt;
+    if (glovesTimer <= 0) {
+        glovesActive = false;
+        glovesTimer = 0;
+    }
+}
+
+
+// --- Tutorial germ: detect both squished, start glove popup timer ---
+if (tutorialGermsActive && tutorialGermsKilled >= 2) {
+    tutorialGermsActive = false;
+    glovePopupTimer = 10;
+}
+if (glovePopupTimer > 0) {
+    glovePopupTimer -= dt;
+    if (glovePopupTimer <= 0) {
+        glovePopupTimer = 0;
+        glovesUnlocked = true;
+        showGlovesPopup = true;
+    }
+}
 
 // --- Recurring virus outbreaks (post-tutorial) ---
 if (phase2WinSeen) {
@@ -355,11 +473,13 @@ if (phase2WinSeen) {
 viruses = viruses.filter(v => embers.includes(v.host));
 const toKill = [];
 viruses.forEach(virus => {
-    if (virus.update(dt)) toKill.push(virus.host);
+    if (virus.update(dt)) {
+        toKill.push(virus.host);
+    }
     embers.forEach(ember => {
-        if (ember === virus.host) return;
-        if (viruses.some(v => v.host === ember)) return;
-        if (!ember.colorAlleles.some(a => a.value === virus.targetAllele)) return;
+        if (ember === virus.host) { return; }
+        if (viruses.some(v => v.host === ember)) { return; }
+        if (!ember.colorAlleles.some(a => a.value === virus.targetAllele)) { return; }
         const dx = ember.x - virus.host.x;
         const dy = ember.y - virus.host.y;
         if (Math.sqrt(dx * dx + dy * dy) < 50) {
@@ -474,7 +594,9 @@ function drawEpistasisPopup(){
 }
 
 function drawEmberInfoPanel(){
-    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup) return;
+    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup) {
+        return;
+    }
 
     const panelWidth = 200;
     const panelHeight = 120;
@@ -486,8 +608,12 @@ function drawEmberInfoPanel(){
         : selectedEmber.x - offset - panelWidth;
     let panelY = selectedEmber.y - panelHeight / 2;
 
-    if (panelY < 0) panelY = 0;
-    if (panelY + panelHeight > canvas.height) panelY = canvas.height - panelHeight;
+    if (panelY < 0) {
+        panelY = 0;
+    }
+    if (panelY + panelHeight > canvas.height) {
+        panelY = canvas.height - panelHeight;
+    }
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
@@ -558,7 +684,9 @@ function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femal
 }
 
 function drawModeButtons(){
-    if (!phase2Started) return;
+    if (!phase2Started) {
+        return;
+    }
     const btnX = canvas.width - 370;
     const btnY = 10;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -569,6 +697,21 @@ function drawModeButtons(){
     ctx.fillText('[ grab ]', btnX + 10, btnY + 20);
     ctx.fillStyle = squishMode ? 'white' : '#555';
     ctx.fillText('[ squish ]', btnX + 10, btnY + 40);
+
+    if (!glovesUnlocked) {
+        return;
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(btnX, btnY + 58, 160, 30);
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'left';
+    const glovesLabel = glovesRemaining > 0 ? `[ gloves x${glovesRemaining} ]` : '[ gloves x0 ]';
+    ctx.fillStyle = glovesActive ? '#5b9bd5' : (glovesRemaining > 0 ? 'white' : '#555');
+    ctx.fillText(glovesLabel, btnX + 10, btnY + 78);
+    if (glovesActive) {
+        ctx.fillStyle = '#5b9bd5';
+        ctx.fillText(`${Math.ceil(glovesTimer)}s`, btnX + 130, btnY + 78);
+    }
 }
 
 function handleEpistasisClick(e) {
@@ -606,31 +749,54 @@ function triggerVirusOutbreak() {
     const presentAlleles = [];
     embers.forEach(ember => {
         ember.colorAlleles.forEach(a => {
-            if (!presentAlleles.includes(a.value)) presentAlleles.push(a.value);
+            if (!presentAlleles.includes(a.value)) {
+                presentAlleles.push(a.value);
+            }
         });
     });
-    if (presentAlleles.length === 0) return;
+    if (presentAlleles.length === 0) {
+        return;
+    }
     const targetAllele = presentAlleles[Math.floor(Math.random() * presentAlleles.length)];
     const carriers = embers.filter(ember =>
         ember.colorAlleles.some(a => a.value === targetAllele) &&
         !viruses.some(v => v.host === ember)
     );
-    if (carriers.length === 0) return;
+    if (carriers.length === 0) {
+        return;
+    }
     const host = carriers[Math.floor(Math.random() * carriers.length)];
     viruses.push(new Virus(host, targetAllele));
 }
 
 function drawPhase2Win() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const navY = canvas.height * 0.70;
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'white';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('The population is thriving.', canvas.width / 2, canvas.height / 2 - 60);
-    ctx.font = '16px sans-serif';
-    wrapText(ctx, 'But something is coming. A virus has been detected, and it targets a specific allele. If that allele disappears from your population, it is gone forever.', canvas.width / 2, canvas.height / 2 - 20, 500, 28);
-    ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
+    if (phase2WinCard === 0) {
+        ctx.fillText('The population is thriving.', cx, cy - 20);
+        ctx.font = '28px sans-serif';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText('▶', cx + 280, navY);
+    } else {
+        ctx.font = '16px sans-serif';
+        wrapText(ctx, 'But something is coming. A virus has been detected, and it targets a specific allele. If that allele disappears from your population, it is gone forever.', cx, cy - 20, 500, 28);
+        ctx.font = '28px sans-serif';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText('◀', cx - 200, navY);
+        ctx.shadowBlur = 0;
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Click anywhere to continue.', cx, navY - 30);
+    }
+    ctx.shadowBlur = 0;
 }
 
 function drawExtinctPopup() {
@@ -644,6 +810,67 @@ function drawExtinctPopup() {
     ctx.fillStyle = 'white';
     ctx.font = '16px sans-serif';
     ctx.fillText('Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
+}
+
+function drawGermIntroPopup() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const navY = canvas.height * 0.70;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    if (germIntroCard === 0) {
+        ctx.fillText("You've touched the petri dish too many times and introduced germs!", cx, cy - 20);
+        ctx.font = '28px sans-serif';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText('▶', cx + 280, navY);
+    } else {
+        ctx.fillText('You need to act fast and SQUISH them.', cx, cy - 20);
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Click the [ squish ] button in the top right, or hold Shift and left-click.', cx, cy + 20);
+        ctx.font = '28px sans-serif';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText('◀', cx - 200, navY);
+        ctx.shadowBlur = 0;
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Click anywhere to continue.', cx, navY - 30);
+    }
+    ctx.shadowBlur = 0;
+}
+
+function drawGlovesPopup() {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const navY = canvas.height * 0.70;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    if (glovesPopupCard === 0) {
+        ctx.fillText('You found medical gloves!', cx, cy - 20);
+        ctx.font = '16px sans-serif';
+        ctx.fillText('Gloves protect the petri dish from contamination.', cx, cy + 20);
+        ctx.font = '28px sans-serif';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText('▶', cx + 280, navY);
+    } else {
+        ctx.fillText('You have 3 uses, each lasting 60 seconds.', cx, cy - 20);
+        ctx.font = '16px sans-serif';
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 10;
+        ctx.fillText('◀', cx - 200, navY);
+        ctx.shadowBlur = 0;
+        ctx.fillText('Click anywhere to continue.', cx, navY - 30);
+    }
+    ctx.shadowBlur = 0;
 }
 
 function restartPhase2() {
@@ -662,6 +889,16 @@ function restartPhase2() {
 }
 
 function handleGermSpawn(e){
+    if (phase2Started) {
+        petriClickCount++;
+        if (petriClickCount >= 10 && !germIntroSeen) {
+            germIntroSeen = true;
+            showGermIntroPopup = true;
+        }
+    }
+    if (glovesActive) {
+        return;
+    }
     if (lifetimeEmberCount >= 15) {
     clicksSinceLastGerm++;
     if (clicksSinceLastGerm >= germSpawnThreshold) {
@@ -677,16 +914,19 @@ function handleGermSpawn(e){
 
 function applyGermDamage(dt){
     germs.forEach(germ => {
-    embers.forEach(ember => {
-        const dx = ember.x - germ.x;
-        const dy = ember.y - germ.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        if (distance < germ.radius + ember.radius) {
-            ember.lifespan -= 15 * dt;
-            ember.damageTint = 50;
+        if (germ.tutorialGerm) {
+            return;
         }
+        embers.forEach(ember => {
+            const dx = ember.x - germ.x;
+            const dy = ember.y - germ.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < germ.radius + ember.radius) {
+                ember.lifespan -= 15 * dt;
+                ember.damageTint = 50;
+            }
+        });
     });
-});
 
 }
 
