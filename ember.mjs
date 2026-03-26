@@ -176,20 +176,18 @@ class Ember {
     const displayRadius = this.age < 10 ? 5 + (this.radius - 5) * (this.age / 10) : this.radius;
     this.displayRadius = displayRadius;
 
-    if (isSelected){
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 30;
-        this.tracePath(ctx, this.x, this.y, displayRadius);
-        ctx.fillStyle = color;
-        ctx.fill();
-    }
-
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 20;
-
     if (this.squishTimer > 0) {
-        this.drawSquish(ctx, color, displayRadius);
+        this.drawSquish(ctx, color, displayRadius, isSelected);
     } else {
+        if (isSelected) {
+            ctx.shadowColor = 'white';
+            ctx.shadowBlur = 30;
+            this.tracePath(ctx, this.x, this.y, displayRadius);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
         ctx.globalAlpha = alpha;
         this.tracePath(ctx, this.x, this.y, displayRadius);
         ctx.fillStyle = color;
@@ -198,15 +196,24 @@ class Ember {
     }
 }
 
-drawSquish(ctx, color, displayRadius) {
+drawSquish(ctx, color, displayRadius, isSelected) {
     const flatness = this.squishTimer > 0.8 ? (1.0 - this.squishTimer) / 0.2 : 1;
     const alpha = this.squishTimer <= 0.8 && !this.squishHeld ? this.squishTimer / 0.8 : 1;
     const scaleX = 1 + flatness * 1.5;
     const scaleY = 1 - flatness * 0.8;
     ctx.save();
-    ctx.globalAlpha = alpha;
     ctx.translate(this.x, this.y);
     ctx.scale(scaleX, scaleY);
+    if (isSelected) {
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 30;
+        this.tracePath(ctx, 0, 0, displayRadius);
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    ctx.globalAlpha = alpha;
     this.tracePath(ctx, 0, 0, displayRadius);
     ctx.fillStyle = color;
     ctx.fill();

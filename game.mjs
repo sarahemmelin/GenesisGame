@@ -1,10 +1,13 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
+import { CURSOR_OPEN, CURSOR_PINCH, CURSOR_POINT } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
 
 
+
+document.body.style.cursor = CURSOR_OPEN;
 
 //--- Canvas setup ---
 const canvas = document.getElementById('canvas');
@@ -39,6 +42,8 @@ let germs = [];
 
 // --- Viruses ---
 let viruses = [];
+let virusOutbreakTimer = 0;
+let virusOutbreakInterval = 180 + Math.random() * 120;
 
 // --- flags and references ---
 let phase2Started = false;
@@ -72,12 +77,12 @@ canvas.addEventListener('mousemove', (e) => {
         draggedEmber.x = mouseX;
         draggedEmber.y = mouseY;
     }
-    if (squishMode) {
-        canvas.style.cursor = 'pointer';
+    if (phase2Started && (squishMode || e.shiftKey)) {
+        canvas.style.cursor = CURSOR_POINT;
     } else if (draggedEmber) {
-        canvas.style.cursor = 'grabbing';
+        canvas.style.cursor = CURSOR_PINCH;
     } else {
-        canvas.style.cursor = 'grab';
+        canvas.style.cursor = CURSOR_OPEN;
     }
     if (squishedEmber) {
     const dx = squishedEmber.x - mouseX;
@@ -99,7 +104,7 @@ canvas.addEventListener('mousedown', (e) => {
         return;
     }
 
-    if (squishMode || e.shiftKey) {
+    if (phase2Started && (squishMode || e.shiftKey)) {
         const germIndex = germs.findIndex(germ => {
         const dx = germ.x - e.clientX;
         const dy = germ.y - e.clientY;
@@ -122,11 +127,18 @@ canvas.addEventListener('mousedown', (e) => {
     draggedEmber = embers.find(ember => {
         const dx = ember.x - e.clientX;
         const dy = ember.y - e.clientY;
-        return Math.sqrt(dx * dx + dy * dy) < 15;
+        return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
     });
     if (draggedEmber) selectedEmber = draggedEmber;
 });
 
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Shift' && phase2Started) canvas.style.cursor = CURSOR_POINT;
+});
+document.addEventListener('keyup', (e) => {
+    if (e.key === 'Shift' && phase2Started) canvas.style.cursor = squishMode ? CURSOR_POINT : CURSOR_OPEN;
+});
 
 canvas.addEventListener('mouseup', () => {
     draggedEmber = null;
@@ -137,7 +149,7 @@ canvas.addEventListener('mouseup', () => {
 canvas.addEventListener('click', (e) => {
     const btnX = canvas.width - 370;
     const btnY = 10;
-    if (e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
+    if (phase2Started && e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
         e.offsetY >= btnY && e.offsetY <= btnY + 50) {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
@@ -166,7 +178,7 @@ canvas.addEventListener('click', (e) => {
     const clickedEmber = embers.find(ember => {
     const dx = ember.x - e.offsetX;
     const dy = ember.y - e.offsetY;
-    return Math.sqrt(dx * dx + dy * dy) < ember.radius;
+    return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
     });
     if (clickedEmber){
          selectedEmber = clickedEmber;    
@@ -328,6 +340,16 @@ germs.forEach(germ => {
 });
 applyGermDamage(dt);
 
+
+// --- Recurring virus outbreaks (post-tutorial) ---
+if (phase2WinSeen) {
+    virusOutbreakTimer += dt;
+    if (virusOutbreakTimer >= virusOutbreakInterval) {
+        triggerVirusOutbreak();
+        virusOutbreakTimer = 0;
+        virusOutbreakInterval = 180 + Math.random() * 120;
+    }
+}
 
 // --- Update, spread, and kill viruses ---
 viruses = viruses.filter(v => embers.includes(v.host));
@@ -536,6 +558,7 @@ function drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femal
 }
 
 function drawModeButtons(){
+    if (!phase2Started) return;
     const btnX = canvas.width - 370;
     const btnY = 10;
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
@@ -617,7 +640,7 @@ function drawExtinctPopup() {
     ctx.fillStyle = 'red';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`${extinctColor} went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
+    ctx.fillText(`The ${extinctColor} allele went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
     ctx.fillStyle = 'white';
     ctx.font = '16px sans-serif';
     ctx.fillText('Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
