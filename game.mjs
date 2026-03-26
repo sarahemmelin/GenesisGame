@@ -2,7 +2,7 @@ import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
-import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial } from "./tutorial.mjs";
+import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
 
 
 
@@ -39,11 +39,13 @@ let germs = [];
 
 // --- Viruses ---
 let viruses = [];
-let virusOutbreakTimer = 0;
-let virusOutbreakInterval = 60 + Math.random() * 30;
 
 // --- flags and references ---
 let phase2Started = false;
+let showExtinctPopup = false;
+let extinctColor = '';
+let showPhase2Win = false;
+let phase2WinSeen = false;
 let epistasisSeen = false;
 let epistasisEmberFound = false;
 let showEpistasisPopup = false;
@@ -146,8 +148,18 @@ canvas.addEventListener('click', (e) => {
     }
 
     if (showEpistasisPopup) {
-        handleEpistasisClick(e); 
-        return; 
+        handleEpistasisClick(e);
+        return;
+    }
+    if (showExtinctPopup) {
+        restartPhase2();
+        return;
+    }
+    if (showPhase2Win) {
+        showPhase2Win = false;
+        phase2WinSeen = true;
+        triggerVirusOutbreak();
+        return;
     }
 
     handleGermSpawn(e);
@@ -175,6 +187,18 @@ function gameLoop(timestamp){
     if (showEpistasisPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawEpistasisPopup();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    if (showExtinctPopup) {
+        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
+        drawExtinctPopup();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+    if (showPhase2Win) {
+        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
+        drawPhase2Win();
         requestAnimationFrame(gameLoop);
         return;
     }
@@ -304,17 +328,8 @@ germs.forEach(germ => {
 });
 applyGermDamage(dt);
 
-// --- Virus outbreak trigger ---
-if (!isTutorialActive()) {
-    virusOutbreakTimer += dt;
-    if (virusOutbreakTimer >= virusOutbreakInterval) {
-        triggerVirusOutbreak();
-        virusOutbreakTimer = 0;
-        virusOutbreakInterval = 60 + Math.random() * 30;
-    }
-}
 
-// --- Update, spread, draw, and kill viruses ---
+// --- Update, spread, and kill viruses ---
 viruses = viruses.filter(v => embers.includes(v.host));
 const toKill = [];
 viruses.forEach(virus => {
@@ -329,11 +344,8 @@ viruses.forEach(virus => {
             viruses.push(new Virus(ember, virus.targetAllele));
         }
     });
-    virus.draw(ctx);
 });
 toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
-
-
 
 //--- Update and draw all embers ---
     embers.forEach(ember => {
@@ -342,6 +354,9 @@ toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
         }
         ember.draw(ctx, ember === selectedEmber);
     })
+
+// --- Draw viruses on top ---
+viruses.forEach(virus => virus.draw(ctx));
 
     //Fixation
     const collectAlleleColors = [];
@@ -370,6 +385,16 @@ toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
     const femaleCount = embers.length - maleCount;
     const firstColor = collectAlleleColors[0];
     const isFixed = collectAlleleColors.every(value => value === firstColor);
+
+    if (phase2Started && !showExtinctPopup && !showPhase2Win && !phase2WinSeen) {
+        const extinct = Object.keys(BASE_COLORS).find(color => !alleleCounts[color]);
+        if (extinct) {
+            showExtinctPopup = true;
+            extinctColor = extinct;
+        } else if (embers.length >= 50) {
+            showPhase2Win = true;
+        }
+    }
     
 
     if (isFixed && embers.length >= 10){
@@ -570,6 +595,47 @@ function triggerVirusOutbreak() {
     if (carriers.length === 0) return;
     const host = carriers[Math.floor(Math.random() * carriers.length)];
     viruses.push(new Virus(host, targetAllele));
+}
+
+function drawPhase2Win() {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('The population is thriving.', canvas.width / 2, canvas.height / 2 - 60);
+    ctx.font = '16px sans-serif';
+    wrapText(ctx, 'But something is coming. A virus has been detected, and it targets a specific allele. If that allele disappears from your population, it is gone forever.', canvas.width / 2, canvas.height / 2 - 20, 500, 28);
+    ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
+}
+
+function drawExtinctPopup() {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'red';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${extinctColor} went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
+    ctx.fillStyle = 'white';
+    ctx.font = '16px sans-serif';
+    ctx.fillText('Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
+}
+
+function restartPhase2() {
+    resetToPhase2();
+    embers = spawnTutorialEmbers(canvas.width, canvas.height);
+    embers.forEach(ember => {
+        ember.immortal = false;
+        ember.age = 10;
+    });
+    germs = [];
+    viruses = [];
+    phase2Started = true;
+    showExtinctPopup = false;
+    extinctColor = '';
+    selectedEmber = null;
 }
 
 function handleGermSpawn(e){

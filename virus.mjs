@@ -5,7 +5,7 @@ class Virus {
         this.infectionTimer = 0;
         this.killAfter = 10;
 
-        this.dots = Array.from({ length: 5 }, () => ({
+        this.dots = Array.from({ length: 10 }, () => ({
             dx: (Math.random() - 0.5) * this.host.radius * 1.5,
             dy: (Math.random() - 0.5) * this.host.radius * 1.5,
         }));
