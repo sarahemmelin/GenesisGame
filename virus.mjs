@@ -3,16 +3,40 @@ class Virus {
         this.host = hostEmber;
         this.targetAllele = targetAllele;
         this.infectionTimer = 0;
-        this.killAfter = 10;
+        this.killAfter = 30;
+        this.spreadRadius = this.host.radius + 40;
 
-        this.dots = Array.from({ length: 10 }, () => ({
-            dx: (Math.random() - 0.5) * this.host.radius * 1.5,
-            dy: (Math.random() - 0.5) * this.host.radius * 1.5,
-        }));
+        const count = Math.floor(Math.random() * 31) + 20;
+        this.dots = Array.from({ length: count }, () => {
+            const angle = Math.random() * Math.PI * 2;
+            const r = Math.random() * this.spreadRadius;
+            return {
+                dx: Math.cos(angle) * r,
+                dy: Math.sin(angle) * r,
+                vx: (Math.random() - 0.5) * 20,
+                vy: (Math.random() - 0.5) * 20,
+            };
+        });
     }
 
     update(dt) {
         this.infectionTimer += dt;
+
+        this.dots.forEach(dot => {
+            dot.vx += (Math.random() - 0.5) * 40 * dt;
+            dot.vy += (Math.random() - 0.5) * 40 * dt;
+            const speed = Math.sqrt(dot.vx ** 2 + dot.vy ** 2);
+            if (speed > 30) { dot.vx = dot.vx / speed * 30; dot.vy = dot.vy / speed * 30; }
+            dot.dx += dot.vx * dt;
+            dot.dy += dot.vy * dt;
+            const dist = Math.sqrt(dot.dx ** 2 + dot.dy ** 2);
+            if (dist > this.spreadRadius) {
+                dot.dx = dot.dx / dist * this.spreadRadius;
+                dot.vx *= -0.5;
+                dot.vy *= -0.5;
+            }
+        });
+
         return this.infectionTimer >= this.killAfter;
     }
 

@@ -340,7 +340,7 @@ viruses.forEach(virus => {
         if (!ember.colorAlleles.some(a => a.value === virus.targetAllele)) return;
         const dx = ember.x - virus.host.x;
         const dy = ember.y - virus.host.y;
-        if (Math.sqrt(dx * dx + dy * dy) < 40) {
+        if (Math.sqrt(dx * dx + dy * dy) < 50) {
             viruses.push(new Virus(ember, virus.targetAllele));
         }
     });
