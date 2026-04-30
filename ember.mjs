@@ -2,7 +2,7 @@ import { SIZES, BASE_COLORS } from './constants.mjs';
 import Allele from './allele.mjs';
 
 class Ember {
-    constructor(x,y, parentA = null, parentB = null){
+    constructor(x,y, parentA = null, parentB = null, explicitAlleles = null){
         const colorKeys = Object.keys(BASE_COLORS);
         const sizeKeys = Object.keys(SIZES);
 
@@ -10,13 +10,18 @@ class Ember {
         this.x = x;
         this.y = y;
         this.age = 0;
-        this.gender = Math.random() < 0.5 ? 'male' : 'female';
-        this.matingWith = null;
+        this.gender = explicitAlleles 
+        ? explicitAlleles.gender 
+        : (Math.random() < 0.5 ? 'male' : 'female');
         this.matingTimer = 0;
         this.squishTimer = 0;
-        this.squishHeld = false;
         this.damageTint = 0;
 
+// --- flags and references ---
+        this.immortal = false;
+        this.squishHeld = false;
+        this.matingWith = null;
+        
 //--- Alleles (inherited or born with) ---
         if (parentA !== null && parentB !== null){
             const colorFromA = parentA.colorAlleles[Math.floor(Math.random() * 2)];
@@ -53,7 +58,33 @@ class Ember {
                 new Allele(flickerAlleleFromA.gene, flickerAlleleFromA.value, flickerAlleleFromA.strength),
                 new Allele(flickerAlleleFromB.gene, flickerAlleleFromB.value, flickerAlleleFromB.strength)
             ];
+        } else if (explicitAlleles){
+        this.colorAlleles = [
+            new Allele('baseColor', explicitAlleles.color),
+            new Allele('baseColor', explicitAlleles.color)
+        ];
 
+        this.sizeAlleles = [
+            new Allele('baseSize', 
+            sizeKeys[Math.floor(Math.random() * sizeKeys.length)]),
+            new Allele('baseSize',
+            sizeKeys[Math.floor(Math.random() * sizeKeys.length)])
+        ];
+
+        this.saturationAlleles = [
+            new Allele('baseSaturation', Math.random()),
+            new Allele('baseSaturation', Math.random())
+        ];
+
+        this.glowAlleles = [
+            new Allele('baseGlow', Math.random()),
+            new Allele('baseGlow', Math.random())
+        ];
+
+        this.flickerAlleles = [
+            new Allele('baseFlicker', 0, -1),
+            new Allele('baseFlicker', 0, -1)
+        ];
         } else {
         this.sizeAlleles = [
             new Allele('baseSize', 
@@ -140,25 +171,25 @@ class Ember {
 
     draw(ctx, isSelected) {
     const alpha = this.damageTint > 0 ? 0.3 + Math.sin(this.damageTint * 1.5) * 0.4 : 1;
-    if (this.damageTint > 0) this.damageTint--;
+    if (this.damageTint > 0) {
+        this.damageTint--;
+    }
     const color = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
     const displayRadius = this.age < 10 ? 5 + (this.radius - 5) * (this.age / 10) : this.radius;
     this.displayRadius = displayRadius;
 
-    if (isSelected){
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 30;
-        this.tracePath(ctx, this.x, this.y, displayRadius);
-        ctx.fillStyle = color;
-        ctx.fill();
-    }
-
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 20;
-
     if (this.squishTimer > 0) {
-        this.drawSquish(ctx, color, displayRadius);
+        this.drawSquish(ctx, color, displayRadius, isSelected);
     } else {
+        if (isSelected) {
+            ctx.shadowColor = 'white';
+            ctx.shadowBlur = 30;
+            this.tracePath(ctx, this.x, this.y, displayRadius);
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
         ctx.globalAlpha = alpha;
         this.tracePath(ctx, this.x, this.y, displayRadius);
         ctx.fillStyle = color;
@@ -167,15 +198,24 @@ class Ember {
     }
 }
 
-drawSquish(ctx, color, displayRadius) {
+drawSquish(ctx, color, displayRadius, isSelected) {
     const flatness = this.squishTimer > 0.8 ? (1.0 - this.squishTimer) / 0.2 : 1;
     const alpha = this.squishTimer <= 0.8 && !this.squishHeld ? this.squishTimer / 0.8 : 1;
     const scaleX = 1 + flatness * 1.5;
     const scaleY = 1 - flatness * 0.8;
     ctx.save();
-    ctx.globalAlpha = alpha;
     ctx.translate(this.x, this.y);
     ctx.scale(scaleX, scaleY);
+    if (isSelected) {
+        ctx.shadowColor = 'white';
+        ctx.shadowBlur = 30;
+        this.tracePath(ctx, 0, 0, displayRadius);
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 20;
+    ctx.globalAlpha = alpha;
     this.tracePath(ctx, 0, 0, displayRadius);
     ctx.fillStyle = color;
     ctx.fill();
@@ -188,7 +228,9 @@ update(width, height, dt){
         this.squishTimer -= dt;
         return;
     }
-    if (this.squishHeld && this.squishTimer <= 0.8) return;
+    if (this.squishHeld && this.squishTimer <= 0.8) {
+        return;
+    }
 
     if (this.matingWith !== null && this.gender === 'female'){
         return;
@@ -214,7 +256,9 @@ update(width, height, dt){
     this.y += this.vy * dt;
     this.age += dt;
 
-    if (this.matingCooldown > 0) this.matingCooldown -= dt;
+    if (this.matingCooldown > 0) {
+        this.matingCooldown -= dt;
+    }
 }
 } 
 

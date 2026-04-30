@@ -9,3 +9,14 @@ export const BASE_COLORS = {
     violet:     {r: 155,    g: 93,  b: 229},
     blue:       {r: 0,      g: 180, b: 216} 
 };
+
+export const GAME_STATE = Object.freeze({
+    TUTORIAL: 'tutorial',
+    PLAYING: 'playing',
+    GAME_OVER: 'game_over'
+});
+
+export const TUTORIAL_STEP = Object.freeze({
+    FIND_AND_MATE: 'find_and_mate',
+    GROW: 'grow'
+});

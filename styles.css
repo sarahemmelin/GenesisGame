@@ -44,7 +44,6 @@ footer {
 canvas {
     display: block;
     background-color: var(--color-bg-outer);
-    cursor: pointer;
 }
 
 /* start-screen styling */
@@ -72,11 +71,14 @@ canvas {
     line-height: 1.6;
 }
 
+* {
+    cursor: inherit;
+}
+
 #start-button {
     padding: 0.75rem 2rem;
     background-color: crimson;
     color: white;
     border: none;
-    cursor: grab;
     font-size: 1rem;
 }

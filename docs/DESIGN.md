@@ -120,6 +120,9 @@ born (tiny) (not implemented)
 - [x] Embers and germs should not be able to move behind panels.
 - [x] The panel for the individual Ember should follow the Ember (be placed near it). Hidden while dragging and during popups.
 - [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small.
+- [ ] Fullscreen mode (Esc or X to exit) — needs design consideration for how canvas edges/panels behave at different resolutions
+- [ ] Draw a circular petri dish as the game background — clip the canvas to a circle, draw dish rim and glass texture
+- [ ] Consider a help/info menu that reuses the tutorial intro cards as reference material for returning players who skip the tutorial or something like that
 - [x] Decrease flicker ratio + add epistasis popup with game freeze on first flicker event
 - [x] Add intro popup when founding embers reach maturity (explain diploid, allele strength, silent alleles, invite player to inspect)
 - [x] Fix epistasis popup: bonus card formatting, ember drawn on top of all panels when dragged
@@ -134,13 +137,13 @@ born (tiny) (not implemented)
 - [x] Detect color fixation (all embers same color) → trigger lose condition
 - [x] Cooldown timer on just-mated
 - [x] Add guard clauses to `Allele` constructor
-- [ ] Add mutation trigger when strength < 0.1
-- [ ] Decide sterility percentage
-- [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting
+- [ ] Add mutation trigger when strength < 0.1 (unsure about this)
+- [ ] Decide sterility percentage (not sure about this either)
+- [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting (not sure about this)
 - [x] Mating cooldown tied to radius (larger = longer cooldown)
 - [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
   - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
-- [ ] Win conditions:
+- [ ] Win conditions (for each "phase" or stage):
     - [ ] Achievements (20 of each)
     - [ ] Collect identical samples (20 identical Embers)
     - [ ] Get fixation (1 round)
@@ -154,6 +157,35 @@ born (tiny) (not implemented)
     - [ ] Part 4: introduces the gene flicker (epistasis)
     - [ ] Part 5: introduces Germs (and explains what they do)
 
+### Tutorial (separate from real game)
+
+**Design decisions:**
+- Tutorial is a scripted scene, NOT the real game with hints overlaid
+- Separate `tutorial.mjs` file — a step machine the game loop checks
+- Embers have handcrafted alleles (guaranteed colors/genders), not random
+- Embers are immortal during Phase 1 so the player isn't rushed
+- Real game starts fresh after tutorial ends
+
+**Phase 1 — Find and mate:**
+- Spawn a small founding population with guaranteed allele coverage
+- Task: find a male with at least one blue allele + a female with at least one     gold allele, and drag them together to mate
+- Finding the right ember implicitly teaches the info panel
+- Dragging them together teaches the mating mechanic
+- Step advances automatically when the correct pair mates
+
+**Phase 2 — Grow the population:**
+- Embers can now age and die (lifespan active)
+- Task: grow population to 50 without losing all alleles from any one color
+- Germs can spawn (introduces calamity risk naturally)
+- This teaches lifespan, genetic diversity, and the germ threat simultaneously
+
+**Architecture (to build):**
+- [x] Create `tutorial.mjs` with step state and scripted ember definitions
+- [x] Extend `Ember` constructor to accept fully explicit alleles (not just parent-inherited)
+- [ ] Tag specific tutorial embers so step completion can be detected
+- [ ] Hook tutorial step checks into the game loop
+- [ ] Tutorial directive UI — show current task to the player on screen
+
 ### Embers
 - [x] Build `draw()` method on Ember
 - [x] Build `update()` method on Ember
@@ -166,7 +198,7 @@ born (tiny) (not implemented)
   - [x] Wiggle animation while mating (male wiggles, female stays still)
   - [x] `matingTimer` counts to 600 ticks, then spawns offspring
   - [x] Embers separate after mating
-- [ ] Implement saturation and glow in `draw()` — alleles are resolved at birth, visual effect TBD
+- [ ] Implement saturation and glow in `draw()` — alleles are resolved at birth, visual effect TBD. Unsure about this one.
 - [x] Separate genders visually: females are rounded squares, males are circles
 - [x] Delta time refactor — all timers and speeds are now seconds-based, frame-rate independent
 
@@ -182,3 +214,13 @@ born (tiny) (not implemented)
   - [ ] Planned: germs (and other calamities) should target specific alleles — a germ that only damages embers carrying a specific color allele. This teaches vulnerability of low diversity: a diverse population survives, a fixed/bottlenecked one gets wiped out. Core mechanic for eugenics learning outcome.
   - [ ] Consider: germ size (`radius`) could scale damage dealt — bigger germ = more drain per frame. Currently all germs drain equally regardless of size.
 
+### Viruses
+- [x] Viruses live in their own `virus.mjs` class.
+- [x] Visual: black green, ~1px dots — no glow, visually distinct from embers and germs.
+- [x] MANY of them — swarm behavior.
+- [x] Allele-specific: each virus outbreak targets one random color allele (e.g. "this virus only kills blue-carriers"). Biologically accurate — viruses exploit specific surface markers.
+- [x] Spread mechanic: spreads to same-allele embers within a proximity radius ("near contact"), like a contagion chain.
+- [x] Kill timer: infected ember dies after ~30 seconds.
+- [x] Unsquishable — player cannot intervene directly.
+- [ ] Teach low-diversity vulnerability? a fixed/bottlenecked population (all one color) gets wiped, a diverse one loses only carriers of that allele.
+- [x] Tutorial transition idea: Phase 2 → real game triggered by a virus incident (TBD).
