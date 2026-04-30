@@ -1,7 +1,7 @@
 import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
-import { CURSOR_OPEN, CURSOR_PINCH, CURSOR_POINT, CURSOR_OPEN_GLOVE, CURSOR_PINCH_GLOVE, CURSOR_POINT_GLOVE } from "./cursors.mjs";
+import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSOR_PINCH, CURSOR_PINCH_GLOVE, CURSOR_POINT, CURSOR_POINT_GLOVE, CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
 
@@ -91,10 +91,25 @@ canvas.addEventListener('mousemove', (e) => {
         draggedEmber.x = mouseX;
         draggedEmber.y = mouseY;
     }
+    const hoveringEmber = !draggedEmber && embers.find(ember => {
+        const dx = ember.x - mouseX;
+        const dy = ember.y - mouseY;
+        return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
+    });
+    const btnX = canvas.width - 370;
+    const btnY = 10;
+    const hoveringButton = phase2Started && (
+        (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
+        (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
+    );
     if (phase2Started && (squishMode || e.shiftKey)) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
+    } else if (hoveringButton) {
+        canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
+    } else if (hoveringEmber) {
+        canvas.style.cursor = glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH;
     } else {
         canvas.style.cursor = glovesActive ? CURSOR_OPEN_GLOVE : CURSOR_OPEN;
     }
@@ -110,6 +125,15 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 canvas.addEventListener('mousedown', (e) => {
+    const btnX = canvas.width - 370;
+    const btnY = 10;
+    const overButton = phase2Started && (
+        (e.clientX >= btnX && e.clientX <= btnX + 130 && e.clientY >= btnY && e.clientY <= btnY + 50) ||
+        (glovesUnlocked && e.clientX >= btnX && e.clientX <= btnX + 160 && e.clientY >= btnY + 58 && e.clientY <= btnY + 88)
+    );
+    if (squishMode || e.shiftKey || overButton) {
+        canvas.style.cursor = glovesActive ? CURSOR_POINT_PRESS_GLOVE : CURSOR_POINT_PRESS;
+    }
     if (showEpistasisPopup) {
         const de = selectedEmber;
         if (de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5) {
@@ -165,9 +189,24 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
-canvas.addEventListener('mouseup', () => {
+canvas.addEventListener('mouseup', (e) => {
     draggedEmber = null;
-    if (squishedEmber) { squishedEmber.squishHeld = false; squishedEmber = null; }
+    if (squishedEmber) {
+        squishedEmber.squishHeld = false;
+        squishedEmber = null;
+    }
+    if (squishMode || e.shiftKey) {
+        canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
+    } else {
+        const hoveringEmber = embers.find(ember => {
+            const dx = ember.x - mouseX;
+            const dy = ember.y - mouseY;
+            return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
+        });
+        canvas.style.cursor = hoveringEmber
+            ? (glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH)
+            : (glovesActive ? CURSOR_OPEN_GLOVE : CURSOR_OPEN);
+    }
 });
 
 

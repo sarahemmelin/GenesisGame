@@ -1,25 +1,32 @@
 const encode = svg => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 
-const OPEN_OUTER  = `M31.46,8.57A3.11,3.11,0,0,0,27,5.75a3.19,3.19,0,0,0-4.66-2.64,3.29,3.29,0,0,0-6.42-.76,3.23,3.23,0,0,0-1.66-.46A3.27,3.27,0,0,0,11,5.18V17.84c-1.28-1.6-2.53-3.18-2.72-3.45A3.19,3.19,0,0,0,5.56,12.9a3.37,3.37,0,0,0-3.47,3.48C2.18,18.18,5.66,24.54,8,28c3.54,5.24,6.92,6,7.07,6l.18,0H25.59a.92.92,0,0,0,.55-.19,13.13,13.13,0,0,0,3.75-6.13c1-3.09,1.53-7.53,1.58-13.56Z`;
-const OPEN_INNER  = `M28.18,27.12a12.46,12.46,0,0,1-2.94,5.08H15.33c-.47-.14-3.07-1.1-5.87-5.25S3.94,17.27,3.89,16.29a1.5,1.5,0,0,1,.45-1.13,1.52,1.52,0,0,1,1.14-.46,1.43,1.43,0,0,1,1.32.71c.29.43,2.36,3,3.57,4.53L12.8,18.3V5.18a1.48,1.48,0,1,1,2.95,0V16.32h1.8v-13a1.51,1.51,0,0,1,3,0V16.45h1.8V6a1.43,1.43,0,1,1,2.85,0V17.44H27V8.54a1.33,1.33,0,0,1,2.65,0v5.55C29.62,20,29.14,24.21,28.18,27.12Z`;
+function sizeToHeight(svg, h) {
+    const vbMatch = svg.match(/viewBox="[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)"/);
+    const w = Math.round(parseFloat(vbMatch[1]) / parseFloat(vbMatch[2]) * h);
+    return svg.replace('<svg ', `<svg width="${w}" height="${h}" `);
+}
 
-const PINCH_OUTER = `M28.09,9.74a4,4,0,0,0-1.16.19c-.19-1.24-1.55-2.18-3.27-2.18A4,4,0,0,0,22.13,8,3.37,3.37,0,0,0,19,6.3a3.45,3.45,0,0,0-2.87,1.32,3.65,3.65,0,0,0-1.89-.51A3.05,3.05,0,0,0,11,9.89v.91c-1.06.4-4.11,1.8-4.91,4.84s.34,8,2.69,11.78a25.21,25.21,0,0,0,5.9,6.41.9.9,0,0,0,.53.17H25.55a.92.92,0,0,0,.55-.19,13.13,13.13,0,0,0,3.75-6.13A25.8,25.8,0,0,0,31.41,18v-5.5A3.08,3.08,0,0,0,28.09,9.74Z`;
-const PINCH_INNER = `M29.61,18a24,24,0,0,1-1.47,9.15A12.46,12.46,0,0,1,25.2,32.2H15.47a23.75,23.75,0,0,1-5.2-5.72c-2.37-3.86-3-8.23-2.48-10.39A5.7,5.7,0,0,1,11,12.76v7.65a.9.9,0,0,0,1.8,0V9.89c0-.47.59-1,1.46-1s1.49.52,1.49,1v5.72h1.8V8.81c0-.28.58-.71,1.46-.71s1.53.48,1.53.75v6.89h1.8V10l.17-.12a2.1,2.1,0,0,1,1.18-.32c.93,0,1.5.44,1.5.68l0,6.5H27V11.87a1.91,1.91,0,0,1,1.12-.33c.86,0,1.52.51,1.52.94Z`;
+async function cur(path, h, hx, hy) {
+    const svg = sizeToHeight(await (await fetch(path)).text(), h);
+    return `${encode(svg)} ${hx} ${hy}, auto`;
+}
 
-const POINT_OUTER = `M30.74,15.19a13.66,13.66,0,0,0-6.87-3.83A26,26,0,0,0,18,10.58V5.28A3.4,3.4,0,0,0,14.5,2,3.4,3.4,0,0,0,11,5.28v10L9.4,13.7a3.77,3.77,0,0,0-5.28,0A3.67,3.67,0,0,0,3,16.33a3.6,3.6,0,0,0,1,2.56l4.66,5.52a11.53,11.53,0,0,0,1.43,4,10.12,10.12,0,0,0,2,2.54v1.92a1.07,1.07,0,0,0,1,1.08H27a1.07,1.07,0,0,0,1-1.08v-2.7a12.81,12.81,0,0,0,3-8.36v-6A1,1,0,0,0,30.74,15.19Z`;
-const POINT_INNER = `M29,21.86a10.72,10.72,0,0,1-2.6,7.26,1.11,1.11,0,0,0-.4.72V32H14.14V30.52a1,1,0,0,0-.44-.83,7.26,7.26,0,0,1-1.82-2.23,9.14,9.14,0,0,1-1.2-3.52,1,1,0,0,0-.23-.59L5.53,17.53a1.7,1.7,0,0,1,0-2.42,1.76,1.76,0,0,1,2.47,0l3,3v3.14l2-1V5.28A1.42,1.42,0,0,1,14.5,4,1.42,1.42,0,0,1,16,5.28v11.8l2,.43V12.59a24.27,24.27,0,0,1,2.51.18V18l1.6.35V13c.41.08.83.17,1.26.28a14.88,14.88,0,0,1,1.53.49v5.15l1.6.35V14.5A11.06,11.06,0,0,1,29,16.23Z`;
-
-const makeSvg = (outer, inner, fill = 'white') =>
-  `<svg fill="none" width="48px" height="48px" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-    <path fill="${fill}" d="${outer}"/>
-    <path fill="none" stroke="black" stroke-width="0.8" d="${outer} ${inner}"/>
-  </svg>`;
-
-export const CURSOR_OPEN  = `${encode(makeSvg(OPEN_OUTER,  OPEN_INNER))}  16 3, auto`;
-export const CURSOR_PINCH = `${encode(makeSvg(PINCH_OUTER, PINCH_INNER))} 16 9, auto`;
-export const CURSOR_POINT = `${encode(makeSvg(POINT_OUTER, POINT_INNER))} 13 2, auto`;
-
-const GLOVE_COLOR = '#2ab5ec';
-export const CURSOR_OPEN_GLOVE  = `${encode(makeSvg(OPEN_OUTER,  OPEN_INNER,  GLOVE_COLOR))} 16 3, auto`;
-export const CURSOR_PINCH_GLOVE = `${encode(makeSvg(PINCH_OUTER, PINCH_INNER, GLOVE_COLOR))} 16 9, auto`;
-export const CURSOR_POINT_GLOVE = `${encode(makeSvg(POINT_OUTER, POINT_INNER, GLOVE_COLOR))} 13 2, auto`;
+//                                               h   hx  hy
+export const [
+    CURSOR_OPEN,        CURSOR_OPEN_GLOVE,
+    CURSOR_REACH,       CURSOR_REACH_GLOVE,
+    CURSOR_PINCH,       CURSOR_PINCH_GLOVE,
+    CURSOR_POINT,       CURSOR_POINT_GLOVE,
+    CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE,
+] = await Promise.all([
+    cur('./hand_icons/hand_open.svg',              64, 12,  8),
+    cur('./hand_icons/hand_open_gloved.svg',        64, 12,  8),
+    cur('./hand_icons/hand_reach.svg',             60, 24,  8),
+    cur('./hand_icons/hand_reach_gloved.svg',       60, 24,  8),
+    cur('./hand_icons/hand_grab.svg',              38, 24, 24),
+    cur('./hand_icons/hand_grab_gloved.svg',        38, 24, 24),
+    cur('./hand_icons/hand_point.svg',             64,  6,  2),
+    cur('./hand_icons/hand_point_gloved.svg',       64,  6,  2),
+    cur('./hand_icons/hand_point_press.svg',        58,  6,  0),
+    cur('./hand_icons/hand_point_press_gloved.svg', 58,  6,  0),
+]);
