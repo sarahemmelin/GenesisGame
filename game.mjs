@@ -17,10 +17,13 @@ canvas.height = window.innerHeight;
 
 //--- Start screen ---
 const startScreen = document.getElementById('start-screen');
-document.getElementById('start-button').addEventListener('click', () => {
+const startButton = document.getElementById('start-button');
+startButton.addEventListener('click', () => {
     startScreen.style.display = 'none';
     requestAnimationFrame(gameLoop);
 });
+startButton.addEventListener('mouseenter', () => { document.body.style.cursor = CURSOR_POINT; });
+startButton.addEventListener('mouseleave', () => { document.body.style.cursor = CURSOR_OPEN; });
 
 // --- State ---
 let mouseX = 0;
@@ -102,11 +105,20 @@ canvas.addEventListener('mousemove', (e) => {
         (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
         (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
     );
+    const cx = canvas.width / 2;
+    const navY = canvas.height * 0.70;
+    const cy = canvas.height / 2;
+    const showingCardPopup = showGermIntroPopup || showGlovesPopup || showPhase2Win || isShowingIntro() || isShowingGoalCards();
+    const hoveringArrow = showingCardPopup &&
+        (Math.abs(mouseX - (cx + 280)) < 50 && Math.abs(mouseY - navY) < 30 ||
+         Math.abs(mouseX - (cx - 200)) < 50 && Math.abs(mouseY - navY) < 30) ||
+        isShowingMatingSuccess() &&
+        (Math.abs(mouseX - (cx + 200)) < 50 && Math.abs(mouseY - (cy + 20)) < 30);
     if (phase2Started && (squishMode || e.shiftKey)) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
-    } else if (hoveringButton) {
+    } else if (hoveringButton || hoveringArrow) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (hoveringEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH;
@@ -195,7 +207,23 @@ canvas.addEventListener('mouseup', (e) => {
         squishedEmber.squishHeld = false;
         squishedEmber = null;
     }
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const navY = canvas.height * 0.70;
+    const btnX = canvas.width - 370;
+    const btnY = 10;
+    const overButton = phase2Started && (
+        (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
+        (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
+    );
+    const overArrow =
+        (showGermIntroPopup || showGlovesPopup || showPhase2Win || isShowingIntro() || isShowingGoalCards()) &&
+        (Math.abs(mouseX - (cx + 280)) < 50 && Math.abs(mouseY - navY) < 30 ||
+         Math.abs(mouseX - (cx - 200)) < 50 && Math.abs(mouseY - navY) < 30) ||
+        isShowingMatingSuccess() && (Math.abs(mouseX - (cx + 200)) < 50 && Math.abs(mouseY - (cy + 20)) < 30);
     if (squishMode || e.shiftKey) {
+        canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
+    } else if (overButton || overArrow) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else {
         const hoveringEmber = embers.find(ember => {
