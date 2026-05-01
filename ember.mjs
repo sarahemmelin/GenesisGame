@@ -21,6 +21,8 @@ class Ember {
         this.immortal = false;
         this.squishHeld = false;
         this.matingWith = null;
+        this.parent1 = parentA;
+        this.parent2 = parentB;
         
 //--- Alleles (inherited or born with) ---
         if (parentA !== null && parentB !== null){
