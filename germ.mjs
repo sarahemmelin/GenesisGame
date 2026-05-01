@@ -24,8 +24,25 @@ class Germ {
 draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.shadowColor = '#333';
 
+    //Pass 1 (adding red glow because it doesn't show in the medium otherwise)
+    ctx.shadowColor = '#8b0000';
+    ctx.shadowBlur = 18;
+    for (let i = 0; i < 3; i++) {
+        ctx.save();
+        ctx.rotate(this.rotation + (i * Math.PI / 3));
+        ctx.beginPath();
+        ctx.moveTo(0, -this.radius);
+        ctx.lineTo(this.radius * 0.6, this.radius * 0.5);
+        ctx.lineTo(-this.radius * 0.6, this.radius * 0.5);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(10, 10, 10, 0.85)`;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    //pass 2 (just black)
+    ctx.shadowBlur = 0;
     for (let i = 0; i < 3; i++) {
         ctx.save();
         ctx.rotate(this.rotation + (i * Math.PI / 3));

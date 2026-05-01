@@ -21,14 +21,22 @@ const startButton   = document.getElementById('start-button');
 const initialsInput = document.getElementById('initials');
 const sourceInput   = document.getElementById('source');
 
+let playerInitials = '';
+let playerSource   = '';
+let playerMedium   = 'LB Agar';
+
+const MEDIUM_COLORS = {
+    'LB Agar':        '#1a1a14',
+    'Blood Agar':     '#1a0a0a',
+    'MacConkey Agar': '#1a1008',
+    'Chocolate Agar': '#1a1208',
+};
+
 // Pre-fill saved values
 initialsInput.value = localStorage.getItem('genesis_initials') ?? '';
 const savedMedium = localStorage.getItem('genesis_medium') ?? 'LB Agar';
 document.querySelector(`input[name="medium"][value="${savedMedium}"]`).checked = true;
-
-let playerInitials = '';
-let playerSource   = '';
-let playerMedium   = 'LB Agar';
+canvas.style.backgroundColor = MEDIUM_COLORS[savedMedium] ?? '#1a1a14';
 
 startButton.addEventListener('click', () => {
     playerInitials = initialsInput.value.trim() || '—';
@@ -36,6 +44,7 @@ startButton.addEventListener('click', () => {
     playerMedium   = document.querySelector('input[name="medium"]:checked').value;
     localStorage.setItem('genesis_initials', playerInitials);
     localStorage.setItem('genesis_medium',   playerMedium);
+    canvas.style.backgroundColor = MEDIUM_COLORS[playerMedium] ?? '#1a1a14';
     startScreen.style.display = 'none';
     requestAnimationFrame(gameLoop);
 });
@@ -47,6 +56,12 @@ document.querySelectorAll('.medium-options label').forEach(label => {
     label.addEventListener('mouseleave',  () => { document.body.style.cursor = CURSOR_OPEN; });
     label.addEventListener('mousedown',   () => { document.body.style.cursor = CURSOR_POINT_PRESS; });
     label.addEventListener('mouseup',     () => { document.body.style.cursor = CURSOR_POINT; });
+});
+
+document.querySelectorAll('input[name="medium"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+        canvas.style.backgroundColor = MEDIUM_COLORS[radio.value] ?? '#1a1a14';
+    });
 });
 
 //=== State ===
@@ -627,23 +642,6 @@ viruses.forEach(virus => virus.draw(ctx));
 
 
 //=== Functions ===
-
-function drawPopupOverlay() {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-}
-
-function distance(ax, ay, bx, by) {
-    const dx = ax - bx;
-    const dy = ay - by;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-
 function drawLabel() {
     const pad  = 10;
     const x    = 20;
@@ -1021,6 +1019,21 @@ function applyGermDamage(dt){
 }
 
 //--- Help functions ---
+function drawPopupOverlay() {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+}
+
+function distance(ax, ay, bx, by) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
     let line = '';
@@ -1036,3 +1049,4 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     });
     ctx.fillText(line, x, y);
 }
+
