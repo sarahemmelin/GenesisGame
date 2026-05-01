@@ -4,7 +4,7 @@ import Virus from "./virus.mjs";
 import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSOR_PINCH, CURSOR_PINCH_GLOVE, CURSOR_POINT, CURSOR_POINT_GLOVE, CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
-
+import { wrapText, distance } from "./utilities.mjs";
 
 
 
@@ -1018,7 +1018,7 @@ function applyGermDamage(dt){
 
 }
 
-//--- Help functions ---
+//--- help function (file specific) ---
 function drawPopupOverlay() {
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
@@ -1027,26 +1027,3 @@ function drawPopupOverlay() {
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
 }
-
-function distance(ax, ay, bx, by) {
-    const dx = ax - bx;
-    const dy = ay - by;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    words.forEach(word => {
-        const testLine = line + word + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && line !== '') {
-            ctx.fillText(line, x, y);
-            line = word + ' ';
-            y += lineHeight;
-        } else {
-            line = testLine;
-        }
-    });
-    ctx.fillText(line, x, y);
-}
-
