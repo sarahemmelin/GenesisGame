@@ -118,11 +118,9 @@ canvas.addEventListener('mousemove', (e) => {
         draggedEmber.y = mouseY;
     }
 
-    const hoveringEmber = !draggedEmber && embers.find(ember => {
-        const dx = ember.x - mouseX;
-        const dy = ember.y - mouseY;
-        return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
-    });
+    const hoveringEmber = !draggedEmber && embers.find(ember =>
+        distance(ember.x, ember.y, mouseX, mouseY) < ember.radius + 24
+    );
 
     const btnX = canvas.width - 370;
     const btnY = 10;
@@ -154,10 +152,7 @@ canvas.addEventListener('mousemove', (e) => {
     }
 
     if (squishedEmber) {
-    const dx = squishedEmber.x - mouseX;
-    const dy = squishedEmber.y - mouseY;
-
-        if (Math.sqrt(dx * dx + dy * dy) > squishedEmber.radius + 5) {
+        if (distance(squishedEmber.x, squishedEmber.y, mouseX, mouseY) > squishedEmber.radius + 5) {
             squishedEmber.squishHeld = false;
             squishedEmber = null;
         }
@@ -177,18 +172,16 @@ canvas.addEventListener('mousedown', (e) => {
     }
     if (showEpistasisPopup) {
         const de = selectedEmber;
-        if (de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5) {
+        if (de && distance(e.clientX, e.clientY, de.x, de.y) < de.radius + 5) {
             draggedEmber = de;
         }
         return;
     }
 
     if (phase2Started && (squishMode || e.shiftKey)) {
-        const germIndex = germs.findIndex(germ => {
-        const dx = germ.x - e.clientX;
-        const dy = germ.y - e.clientY;
-    return Math.sqrt(dx * dx + dy * dy) < germ.radius;
-    });
+        const germIndex = germs.findIndex(germ =>
+            distance(germ.x, germ.y, e.clientX, e.clientY) < germ.radius
+        );
     if (germIndex !== -1) {
         if (germs[germIndex].tutorialGerm && tutorialGermsActive) {
             tutorialGermsKilled++;
@@ -197,20 +190,17 @@ canvas.addEventListener('mousedown', (e) => {
         return;
     }
         squishedEmber = embers.find(ember => {
-            const dx = ember.x - e.clientX;
-            const dy = ember.y - e.clientY;
-            return Math.sqrt(dx * dx + dy * dy) < ember.radius + 5;
+            return distance(ember.x, ember.y, e.clientX, e.clientY) < ember.radius + 5;
         });
-        if (squishedEmber && squishedEmber.squishTimer === 0){ 
-            squishedEmber.squishTimer = 1.0; squishedEmber.squishHeld = true;
+        if (squishedEmber && squishedEmber.squishTimer === 0) {
+            squishedEmber.squishTimer = 1.0;
+            squishedEmber.squishHeld = true;
         }
         return;
     }
-    draggedEmber = embers.find(ember => {
-        const dx = ember.x - e.clientX;
-        const dy = ember.y - e.clientY;
-        return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
-    });
+    draggedEmber = embers.find(ember =>
+        distance(ember.x, ember.y, e.clientX, e.clientY) < ember.radius + 24
+    );
     if (draggedEmber) {
         selectedEmber = draggedEmber;
     }
@@ -255,11 +245,9 @@ canvas.addEventListener('mouseup', (e) => {
     } else if (overButton || overArrow) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else {
-        const hoveringEmber = embers.find(ember => {
-            const dx = ember.x - mouseX;
-            const dy = ember.y - mouseY;
-            return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
-        });
+        const hoveringEmber = embers.find(ember =>
+            distance(ember.x, ember.y, mouseX, mouseY) < ember.radius + 24
+        );
         canvas.style.cursor = hoveringEmber
             ? (glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH)
             : (glovesActive ? CURSOR_OPEN_GLOVE : CURSOR_OPEN);
@@ -356,11 +344,9 @@ canvas.addEventListener('click', (e) => {
     }
 
     handleGermSpawn(e);
-    const clickedEmber = embers.find(ember => {
-    const dx = ember.x - e.offsetX;
-    const dy = ember.y - e.offsetY;
-    return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
-    });
+    const clickedEmber = embers.find(ember =>
+        distance(ember.x, ember.y, e.offsetX, e.offsetY) < ember.radius + 24
+    );
     if (clickedEmber){
          selectedEmber = clickedEmber;    
     } else {
@@ -447,10 +433,10 @@ function gameLoop(timestamp){
 
         const dx = a.x - b.x;
         const dy = a.y - b.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const dist = distance(a.x, a.y, b.x, b.y);
 
         if (
-            distance < 50 &&
+            dist < 50 &&
             a.gender !== b.gender &&
             a.age > 10 && b.age > 10 &&
             a.matingCooldown <= 0 && b.matingCooldown <= 0 &&
@@ -461,8 +447,8 @@ function gameLoop(timestamp){
             b.matingWith = a;
             
             const targetDist = a.radius + b.radius;
-            b.x = a.x - dx / distance * targetDist;
-            b.y = a.y - dy / distance * targetDist;
+            b.x = a.x - dx / dist * targetDist;
+            b.y = a.y - dy / dist * targetDist;
 
             if (draggedEmber === a || draggedEmber === b) {
                 draggedEmber = null;
@@ -563,9 +549,7 @@ viruses.forEach(virus => {
         if (ember === virus.host) { return; }
         if (viruses.some(v => v.host === ember)) { return; }
         if (!ember.colorAlleles.some(a => a.value === virus.targetAllele)) { return; }
-        const dx = ember.x - virus.host.x;
-        const dy = ember.y - virus.host.y;
-        if (Math.sqrt(dx * dx + dy * dy) < 50) {
+        if (distance(ember.x, ember.y, virus.host.x, virus.host.y) < 50) {
             viruses.push(new Virus(ember, virus.targetAllele));
         }
     });
@@ -611,7 +595,7 @@ viruses.forEach(virus => virus.draw(ctx));
     const firstColor = collectAlleleColors[0];
     const isFixed = collectAlleleColors.every(value => value === firstColor);
 
-    if (phase2Started && !showExtinctPopup && !showPhase2Win) {
+    if (phase2Started && !showExtinctPopup && !showPhase2Win && currentGameState === GAME_STATE.TUTORIAL) {
         const extinct = Object.keys(BASE_COLORS).find(color => !alleleCounts[color]);
         if (extinct) {
             showExtinctPopup = true;
@@ -642,7 +626,23 @@ viruses.forEach(virus => virus.draw(ctx));
 }
 
 
-//=== Functions === 
+//=== Functions ===
+
+function drawPopupOverlay() {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+}
+
+function distance(ax, ay, bx, by) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
 
 function drawLabel() {
     const pad  = 10;
@@ -671,15 +671,11 @@ function drawLabel() {
     ctx.fillText(line1, x + pad, y + pad);
     ctx.font = '11px monospace';
     ctx.fillText(line2, x + pad, y + pad + 17);
+    ctx.textBaseline = 'alphabetic';
 }
 
 function drawEpistasisPopup(){
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
+    drawPopupOverlay();
     ctx.textAlign = 'center';
     ctx.fillText('EPISTASIS!', canvas.width / 2, canvas.height / 2 - 80);
     ctx.font = '16px sans-serif';
@@ -840,7 +836,7 @@ function handleEpistasisClick(e) {
         return;
     }
     const de = selectedEmber;
-    const onEmber = de && Math.sqrt((e.clientX - de.x) ** 2 + (e.clientY - de.y) ** 2) < de.radius + 5;
+    const onEmber = de && distance(e.clientX, e.clientY, de.x, de.y) < de.radius + 5;
     if (onEmber) { 
     epistasisEmberFound = true;
     showBonusCard = true; 
@@ -888,12 +884,7 @@ function drawPhase2Win() {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     const navY = canvas.height * 0.70;
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
+    drawPopupOverlay();
     if (phase2WinCard === 0) {
         ctx.fillText('The population is thriving.', cx, cy - 20);
         ctx.font = '28px sans-serif';
@@ -916,12 +907,8 @@ function drawPhase2Win() {
 
 function drawExtinctPopup() {
     const isPlaying = currentGameState === GAME_STATE.PLAYING;
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawPopupOverlay();
     ctx.fillStyle = 'red';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
     ctx.fillText(`The ${extinctColor} allele went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
     ctx.fillStyle = 'white';
     ctx.font = '16px sans-serif';
@@ -932,12 +919,7 @@ function drawGermIntroPopup() {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     const navY = canvas.height * 0.70;
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
+    drawPopupOverlay();
     if (germIntroCard === 0) {
         ctx.fillText("You've touched the petri dish too many times and introduced germs!", cx, cy - 20);
         ctx.font = '28px sans-serif';
@@ -963,12 +945,7 @@ function drawGlovesPopup() {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     const navY = canvas.height * 0.70;
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
+    drawPopupOverlay();
     if (glovesPopupCard === 0) {
         ctx.fillText('You found medical gloves!', cx, cy - 20);
         ctx.font = '16px sans-serif';
@@ -1034,10 +1011,7 @@ function applyGermDamage(dt){
             return;
         }
         embers.forEach(ember => {
-            const dx = ember.x - germ.x;
-            const dy = ember.y - germ.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < germ.radius + ember.radius) {
+            if (distance(ember.x, ember.y, germ.x, germ.y) < germ.radius + ember.radius) {
                 ember.lifespan -= 15 * dt;
                 ember.damageTint = 50;
             }
