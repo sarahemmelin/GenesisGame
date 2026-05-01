@@ -130,7 +130,11 @@ born (tiny) (not implemented)
 - [x] Germ intro popup (2-card) explaining first germ breakout; gloves popup (2-card) after tutorial germs are squished
 - [x] Lab specimen label in top-left corner: initials, date, medium, source — stored in localStorage. Medium picker on start screen.
 - [x] Fix: female ember stuck when male partner dies mid-mating (dangling matingWith reference)
-- [ ] Allele extinction popup: notify the player when a color allele goes fully extinct from the population
+- [x] Allele extinction popup: notify the player when a color allele goes fully extinct from the population
+- [ ] Fix: tutorial intro card — allele label dots/text shifted vertically
+- [ ] Fix: population panel background box too short, text overflows below it
+- [ ] Fix: mode buttons ([grab] [squish]) background sizing incorrect
+- [ ] Fix: gloves button background sizing incorrect
 - [ ] Bottleneck popup: if population drops to ~5 or fewer, those survivors become the founding population — popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
 
 ### Gameplay
@@ -216,6 +220,7 @@ born (tiny) (not implemented)
   - [x] Increase speed and damage on germs
   - [ ] Planned: germs (and other calamities) should target specific alleles — a germ that only damages embers carrying a specific color allele. This teaches vulnerability of low diversity: a diverse population survives, a fixed/bottlenecked one gets wiped out. Core mechanic for eugenics learning outcome.
   - [ ] Consider: germ size (`radius`) could scale damage dealt — bigger germ = more drain per frame. Currently all germs drain equally regardless of size.
+  - [ ] Germs should slow down when passing over an ember — makes them feel "sticky" and more threatening during contact.
 
 ### Viruses
 - [x] Viruses live in their own `virus.mjs` class.
