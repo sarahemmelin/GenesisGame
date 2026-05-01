@@ -73,6 +73,7 @@ let virusOutbreakTimer = 0;
 let virusOutbreakInterval = 180 + Math.random() * 120;
 
 // --- flags and references ---
+let currentGameState = GAME_STATE.TUTORIAL;
 let phase2Started = false;
 let glovesRemaining = 3;
 let glovesActive = false;
@@ -323,7 +324,12 @@ canvas.addEventListener('click', (e) => {
         return;
     }
     if (showExtinctPopup) {
-        restartPhase2();
+        if (currentGameState === GAME_STATE.PLAYING) {
+            showExtinctPopup = false;
+            extinctColor = '';
+        } else {
+            restartPhase2();
+        }
         return;
     }
     if (showPhase2Win) {
@@ -339,6 +345,7 @@ canvas.addEventListener('click', (e) => {
             showPhase2Win = false;
             phase2WinCard = 0;
             phase2WinSeen = true;
+            currentGameState = GAME_STATE.PLAYING;
             triggerVirusOutbreak();
         }
         return;
@@ -533,7 +540,7 @@ if (glovePopupTimer > 0) {
 }
 
 // --- Recurring virus outbreaks (post-tutorial) ---
-if (phase2WinSeen) {
+if (currentGameState === GAME_STATE.PLAYING) {
     virusOutbreakTimer += dt;
     if (virusOutbreakTimer >= virusOutbreakInterval) {
         triggerVirusOutbreak();
@@ -601,7 +608,7 @@ viruses.forEach(virus => virus.draw(ctx));
     const firstColor = collectAlleleColors[0];
     const isFixed = collectAlleleColors.every(value => value === firstColor);
 
-    if (phase2Started && !showExtinctPopup && !showPhase2Win && !phase2WinSeen) {
+    if (phase2Started && !showExtinctPopup && !showPhase2Win) {
         const extinct = Object.keys(BASE_COLORS).find(color => !alleleCounts[color]);
         if (extinct) {
             showExtinctPopup = true;
@@ -905,6 +912,7 @@ function drawPhase2Win() {
 }
 
 function drawExtinctPopup() {
+    const isPlaying = currentGameState === GAME_STATE.PLAYING;
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -914,7 +922,7 @@ function drawExtinctPopup() {
     ctx.fillText(`The ${extinctColor} allele went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
     ctx.fillStyle = 'white';
     ctx.font = '16px sans-serif';
-    ctx.fillText('Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText(isPlaying ? 'Click anywhere to continue.' : 'Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
 }
 
 function drawGermIntroPopup() {
