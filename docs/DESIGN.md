@@ -119,14 +119,17 @@ born (tiny) (not implemented)
 - [x] Extinct allele shown in red in population panel ("violet: extinct")
 - [x] Embers and germs should not be able to move behind panels.
 - [x] The panel for the individual Ember should follow the Ember (be placed near it). Hidden while dragging and during popups.
-- [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small.
+- [x] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small.
 - [ ] Fullscreen mode (Esc or X to exit) — needs design consideration for how canvas edges/panels behave at different resolutions
-- [ ] Draw a circular petri dish as the game background — clip the canvas to a circle, draw dish rim and glass texture. Tried and scrapped: circular boundary made the playable area too small. Would need a much larger canvas or smaller embers to work.
+- [-] Draw a circular petri dish as the game background — clip the canvas to a circle, draw dish rim and glass texture. Tried and scrapped: circular boundary made the playable area too small. Would need a much larger canvas or smaller embers to work.
 - [ ] Consider a help/info menu that reuses the tutorial intro cards as reference material for returning players who skip the tutorial or something like that
 - [x] Decrease flicker ratio + add epistasis popup with game freeze on first flicker event
 - [x] Add intro popup when founding embers reach maturity (explain diploid, allele strength, silent alleles, invite player to inspect)
 - [x] Fix epistasis popup: bonus card formatting, ember drawn on top of all panels when dragged
 - [x] Fix epistasis popup flow: ember info now lands on card 2 after closing the bonus card, not back on card 1
+- [x] Germ intro popup (2-card) explaining first germ breakout; gloves popup (2-card) after tutorial germs are squished
+- [x] Lab specimen label in top-left corner: initials, date, medium, source — stored in localStorage. Medium picker on start screen.
+- [x] Fix: female ember stuck when male partner dies mid-mating (dangling matingWith reference)
 - [ ] Allele extinction popup: notify the player when a color allele goes fully extinct from the population
 - [ ] Bottleneck popup: if population drops to ~5 or fewer, those survivors become the founding population — popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
 

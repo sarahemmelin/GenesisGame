@@ -7,15 +7,15 @@ import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingG
 
 
 
-document.body.style.cursor = CURSOR_OPEN;
 
-//--- Canvas setup ---
+//=== Canvas setup ===
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-//--- Start screen ---
+//=== Start screen ===
+document.body.style.cursor = CURSOR_OPEN;
 const startScreen   = document.getElementById('start-screen');
 const startButton   = document.getElementById('start-button');
 const initialsInput = document.getElementById('initials');
@@ -49,30 +49,29 @@ document.querySelectorAll('.medium-options label').forEach(label => {
     label.addEventListener('mouseup',     () => { document.body.style.cursor = CURSOR_POINT; });
 });
 
-// --- State ---
+//=== State ===
 let mouseX = 0;
 let mouseY = 0;
 let selectedEmber = null;
 let draggedEmber = null;
 let squishedEmber = null;
 
-// --- Embers --- 
-// let embers = [];
-// for (let i = 0; i < 10; i++){
-//     embers.push(new Ember(Math.random() * canvas.width, Math.random() * canvas.height));
-// }
+//--- Embers ---
 let embers = spawnTutorialEmbers(canvas.width, canvas.height);
 
 
-// --- Germs ---
+//--- Germs ---
 let germs = [];
+let germSpawnThreshold = Math.floor(Math.random() * 26) + 15; 
+let lifetimeEmberCount = embers.length;
 
-// --- Viruses ---
+//--- Viruses ---
 let viruses = [];
 let virusOutbreakTimer = 0;
 let virusOutbreakInterval = 180 + Math.random() * 120;
 
-// --- flags and references ---
+//--- Flags and references ---
+let currentGameState = GAME_STATE.TUTORIAL;
 let phase2Started = false;
 let glovesRemaining = 3;
 let glovesActive = false;
@@ -98,12 +97,11 @@ let showEpistasisPopup = false;
 let epistasisCard = 0;
 let showBonusCard = false;
 let squishMode = false; 
-let lifetimeEmberCount = embers.length;
 let clicksSinceLastGerm = 0;
-let germSpawnThreshold = Math.floor(Math.random() * 26) + 15; 
 
-// === popups ===
-// --- epistasiscards --- 
+
+//=== Popups ===
+//--- Epistasis cards ---
 let epistasisCards = [
     "Something just happened. An unusual ember was born. Can you find it?",
     "Even though the color alleles inherited from its parents did not change, a separate gene, 'the flicker gene', switched one color channel off at birth.",
@@ -111,6 +109,7 @@ let epistasisCards = [
 ];
 
 
+//=== Event listeners ===
 canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -118,17 +117,20 @@ canvas.addEventListener('mousemove', (e) => {
         draggedEmber.x = mouseX;
         draggedEmber.y = mouseY;
     }
+
     const hoveringEmber = !draggedEmber && embers.find(ember => {
         const dx = ember.x - mouseX;
         const dy = ember.y - mouseY;
         return Math.sqrt(dx * dx + dy * dy) < ember.radius + 24;
     });
+
     const btnX = canvas.width - 370;
     const btnY = 10;
     const hoveringButton = phase2Started && (
         (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
         (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
     );
+
     const cx = canvas.width / 2;
     const navY = canvas.height * 0.70;
     const cy = canvas.height / 2;
@@ -138,6 +140,7 @@ canvas.addEventListener('mousemove', (e) => {
          Math.abs(mouseX - (cx - 200)) < 50 && Math.abs(mouseY - navY) < 30) ||
         isShowingMatingSuccess() &&
         (Math.abs(mouseX - (cx + 200)) < 50 && Math.abs(mouseY - (cy + 20)) < 30);
+
     if (phase2Started && (squishMode || e.shiftKey)) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
@@ -149,14 +152,16 @@ canvas.addEventListener('mousemove', (e) => {
     } else {
         canvas.style.cursor = glovesActive ? CURSOR_OPEN_GLOVE : CURSOR_OPEN;
     }
+
     if (squishedEmber) {
     const dx = squishedEmber.x - mouseX;
     const dy = squishedEmber.y - mouseY;
-    if (Math.sqrt(dx * dx + dy * dy) > squishedEmber.radius + 5) {
-        squishedEmber.squishHeld = false;
-        squishedEmber = null;
+
+        if (Math.sqrt(dx * dx + dy * dy) > squishedEmber.radius + 5) {
+            squishedEmber.squishHeld = false;
+            squishedEmber = null;
+        }
     }
-}
 
 });
 
@@ -323,7 +328,12 @@ canvas.addEventListener('click', (e) => {
         return;
     }
     if (showExtinctPopup) {
-        restartPhase2();
+        if (currentGameState === GAME_STATE.PLAYING) {
+            showExtinctPopup = false;
+            extinctColor = '';
+        } else {
+            restartPhase2();
+        }
         return;
     }
     if (showPhase2Win) {
@@ -339,6 +349,7 @@ canvas.addEventListener('click', (e) => {
             showPhase2Win = false;
             phase2WinCard = 0;
             phase2WinSeen = true;
+            currentGameState = GAME_STATE.PLAYING;
             triggerVirusOutbreak();
         }
         return;
@@ -355,11 +366,12 @@ canvas.addEventListener('click', (e) => {
     } else {
         selectedEmber = null;
     }
-    
-;})
 
+});
 
 let lastTime = 0;
+
+//=== Game loop ===
 function gameLoop(timestamp){
     const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
     lastTime = timestamp;
@@ -458,6 +470,7 @@ function gameLoop(timestamp){
         }
     }
     }
+
 //--- After mating: Spawn offspring + separate embers ---
     embers.forEach(ember => {
     if (ember.gender === 'male' && ember.matingTimer >= 10) {
@@ -496,10 +509,7 @@ function gameLoop(timestamp){
         ember.matingWith = null;
         ember.matingTimer = 0;
         ember.matingCooldown = ember.radius * 0.15;
-
-
     }
-
 });
 
 germs = germs.filter(germ => germ.age < germ.lifespan);
@@ -518,7 +528,7 @@ if (glovesActive) {
 }
 
 
-// --- Tutorial germ: detect both squished, start glove popup timer ---
+//--- Tutorial germ, glove timer ---
 if (tutorialGermsActive && tutorialGermsKilled >= 2) {
     tutorialGermsActive = false;
     glovePopupTimer = 10;
@@ -532,8 +542,8 @@ if (glovePopupTimer > 0) {
     }
 }
 
-// --- Recurring virus outbreaks (post-tutorial) ---
-if (phase2WinSeen) {
+//--- Recurring virus outbreaks ---
+if (currentGameState === GAME_STATE.PLAYING) {
     virusOutbreakTimer += dt;
     if (virusOutbreakTimer >= virusOutbreakInterval) {
         triggerVirusOutbreak();
@@ -542,7 +552,7 @@ if (phase2WinSeen) {
     }
 }
 
-// --- Update, spread, and kill viruses ---
+//--- Virus update (kill, spread) ---
 viruses = viruses.filter(v => embers.includes(v.host));
 const toKill = [];
 viruses.forEach(virus => {
@@ -570,10 +580,10 @@ toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
         ember.draw(ctx, ember === selectedEmber);
     })
 
-// --- Draw viruses on top ---
+//--- Draw viruses on top ---
 viruses.forEach(virus => virus.draw(ctx));
 
-    //Fixation
+//--- Population state ---
     const collectAlleleColors = [];
     embers.forEach(ember => {
        collectAlleleColors.push(ember.colorAlleles[0].value);
@@ -601,7 +611,7 @@ viruses.forEach(virus => virus.draw(ctx));
     const firstColor = collectAlleleColors[0];
     const isFixed = collectAlleleColors.every(value => value === firstColor);
 
-    if (phase2Started && !showExtinctPopup && !showPhase2Win && !phase2WinSeen) {
+    if (phase2Started && !showExtinctPopup && !showPhase2Win) {
         const extinct = Object.keys(BASE_COLORS).find(color => !alleleCounts[color]);
         if (extinct) {
             showExtinctPopup = true;
@@ -620,12 +630,12 @@ viruses.forEach(virus => virus.draw(ctx));
         return;
     }
 
-//--- drawing UI ----
+    //--- drawing UI ----
             drawEmberInfoPanel();
             drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
             drawModeButtons();
-        }  // end: not showing tutorial cards
-    }  // end: not showing popup
+        }
+    }
 
     drawLabel();
     requestAnimationFrame(gameLoop);
@@ -905,6 +915,7 @@ function drawPhase2Win() {
 }
 
 function drawExtinctPopup() {
+    const isPlaying = currentGameState === GAME_STATE.PLAYING;
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'rgba(0,0,0,0.85)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -914,7 +925,7 @@ function drawExtinctPopup() {
     ctx.fillText(`The ${extinctColor} allele went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
     ctx.fillStyle = 'white';
     ctx.font = '16px sans-serif';
-    ctx.fillText('Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillText(isPlaying ? 'Click anywhere to continue.' : 'Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
 }
 
 function drawGermIntroPopup() {
@@ -1035,7 +1046,7 @@ function applyGermDamage(dt){
 
 }
 
-//help functions 
+//--- Help functions ---
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
     let line = '';
