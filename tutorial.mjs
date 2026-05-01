@@ -1,5 +1,6 @@
 import Ember from "./ember.mjs";
 import { TUTORIAL_STEP, BASE_COLORS } from "./constants.mjs";
+import { wrapText } from "./utilities.mjs";
 
 //=== State ===
 let step = TUTORIAL_STEP.FIND_AND_MATE;
@@ -249,21 +250,6 @@ function drawMatingSuccess(ctx) {
 }
 
 //--- Help functions ---
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    words.forEach(word => {
-        const testLine = line + word + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && line !== '') {
-            ctx.fillText(line, x, y);
-            line = word + ' ';
-            y += lineHeight;
-        } else {
-            line = testLine;
-        }
-    });
-    ctx.fillText(line, x, y);
-}
 
 function makeEmber(color, gender, canvasWidth, canvasHeight) {
     const e = new Ember(Math.random() * canvasWidth, Math.random() * canvasHeight, null, null, {color, gender})
