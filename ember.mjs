@@ -130,10 +130,18 @@ class Ember {
         const allele2 = this.colorAlleles[1];
         const rgb1 = BASE_COLORS[allele1.value];
         const rgb2 = BASE_COLORS[allele2.value];
+        const colorTotal = allele1.strength + allele2.strength;
 
-        this.r = (rgb1.r * allele1.strength + rgb2.r * allele2.strength) / (allele1.strength + allele2.strength);
-        this.g = (rgb1.g * allele1.strength + rgb2.g * allele2.strength) / (allele1.strength + allele2.strength);
-        this.b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / (allele1.strength + allele2.strength);
+        if (colorTotal === 0) {
+            // Albinism: both allele strengths drifted to zero — no pigment expressed
+            this.r = 255;
+            this.g = 255;
+            this.b = 255;
+        } else {
+            this.r = (rgb1.r * allele1.strength + rgb2.r * allele2.strength) / colorTotal;
+            this.g = (rgb1.g * allele1.strength + rgb2.g * allele2.strength) / colorTotal;
+            this.b = (rgb1.b * allele1.strength + rgb2.b * allele2.strength) / colorTotal;
+        }
 
 //--- Resolve saturation and glow from alleles ---
         const sat1 = this.saturationAlleles[0];
@@ -155,9 +163,29 @@ class Ember {
             this.flickeredChannel = null;
         }
 
-//--- Velocity (smaller = faster) --- 
+//--- Velocity (smaller = faster) ---
         this.vx = ((Math.random() - 0.5) * (2400 / this.radius));
         this.vy = ((Math.random() - 0.5) * (2400 / this.radius));
+
+//--- Pre-render glow to offscreen canvas (avoid shadowBlur every frame) ---
+        this._glowSpread = 30;
+        const safeRadius = (isFinite(this.radius) && this.radius > 0) ? this.radius : 15;
+        const glowSize = Math.ceil((safeRadius + this._glowSpread) * 2);
+        this._glowCache = new OffscreenCanvas(glowSize, glowSize);
+        const gc = this._glowCache.getContext('2d');
+        const glowCenter = glowSize / 2;
+        const glowColor = `rgb(${Math.round(this.r)}, ${Math.round(this.g)}, ${Math.round(this.b)})`;
+        gc.shadowColor = glowColor;
+        gc.shadowBlur = 20;
+        gc.fillStyle = glowColor;
+        if (this.gender === 'female') {
+            gc.beginPath();
+            gc.roundRect(glowCenter - this.radius, glowCenter - this.radius, this.radius * 2, this.radius * 2, this.radius * 0.35);
+        } else {
+            gc.beginPath();
+            gc.arc(glowCenter, glowCenter, this.radius, 0, Math.PI * 2);
+        }
+        gc.fill();
     }
 
 
@@ -190,12 +218,11 @@ class Ember {
             ctx.fillStyle = color;
             ctx.fill();
         }
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 0;
+        const scale = displayRadius / this.radius;
+        const drawSize = (this.radius + this._glowSpread) * 2 * scale;
         ctx.globalAlpha = alpha;
-        this.tracePath(ctx, this.x, this.y, displayRadius);
-        ctx.fillStyle = color;
-        ctx.fill();
+        ctx.drawImage(this._glowCache, this.x - drawSize / 2, this.y - drawSize / 2, drawSize, drawSize);
         ctx.globalAlpha = 1;
     }
 }

@@ -43,11 +43,14 @@ class Virus {
     draw(ctx) {
         ctx.shadowBlur = 0;
         ctx.fillStyle = 'black';
+        ctx.beginPath();
         for (const dot of this.dots) {
-            ctx.beginPath();
-            ctx.arc(this.host.x + dot.dx, this.host.y + dot.dy, 1.5, 0, Math.PI * 2);
-            ctx.fill();
+            const x = this.host.x + dot.dx;
+            const y = this.host.y + dot.dy;
+            ctx.moveTo(x + 1.5, y);
+            ctx.arc(x, y, 1.5, 0, Math.PI * 2);
         }
+        ctx.fill();
     }
 }
 

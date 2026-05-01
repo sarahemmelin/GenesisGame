@@ -31,7 +31,7 @@ let showGoalCards = false;
 let goalCard = 0;
 const goalCards = [
     "Now they can age and die. Keep the population alive.",
-    "There are four colors in this population. Lose all embers of one color and that allele is gone forever.",
+    "Four color alleles exist in this population. Each ember carries two. If every ember carrying a specific allele dies, it's gone from the gene pool forever.",
     "New goal: Grow the population to 50 without losing all alleles of any one color.",
     "Be careful how much you touch the petri dish, you might introduce something unwanted."
 ];
