@@ -1,10 +1,10 @@
 import Ember from "./ember.mjs";
 import { TUTORIAL_STEP, BASE_COLORS } from "./constants.mjs";
 
-// --- State ---
+//=== State ===
 let step = TUTORIAL_STEP.FIND_AND_MATE;
 
-// --- Intro ---
+//--- Intro ---
 let showIntro = true;
 let introCard = 0;
 const introCardsText = [
@@ -15,7 +15,7 @@ const introCardsText = [
     "Click on an Ember to inspect it. Find a male with a blue allele and drag it to a female with a gold allele."
 ];
 
-// --- Phase 1: Find and mate ---
+//--- Phase 1: Find and mate ---
 let showMatingSuccess = false;
 let matingSuccessCard = 0;
 let matingDetected = false;
@@ -25,7 +25,7 @@ const matingSuccessCards = [
     "Excellent! They're mating.",
 ];
 
-// --- Phase 2: Grow the population ---
+//--- Phase 2: Grow the population ---
 let showGoalCards = false;
 let goalCard = 0;
 const goalCards = [
@@ -43,6 +43,7 @@ const emberShowcase = [
 let showcaseIndex = 0;
 let showcaseTimer = 0;
 
+//=== Functions ===
 export function draw(ctx) {
     if (showMatingSuccess) {
         drawMatingSuccess(ctx);
@@ -247,7 +248,7 @@ function drawMatingSuccess(ctx) {
     }
 }
 
-//help functions
+//--- Help functions ---
 function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
     const words = text.split(' ');
     let line = '';
