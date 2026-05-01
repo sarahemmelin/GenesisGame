@@ -4,8 +4,8 @@ import Virus from "./virus.mjs";
 import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSOR_PINCH, CURSOR_PINCH_GLOVE, CURSOR_POINT, CURSOR_POINT_GLOVE, CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
-import { wrapText, distance } from "./utilities.mjs";
-import { drawLabel, drawPopulationPanel } from "./ui.mjs";
+import { distance } from "./utilities.mjs";
+import { drawLabel, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawBonusCard, drawEpistasisPopup } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -111,6 +111,7 @@ let epistasisEmberFound = false;
 let showEpistasisPopup = false;
 let epistasisCard = 0;
 let showBonusCard = false;
+let bonusCardShownAt = 0;
 let squishMode = false; 
 let clicksSinceLastGerm = 0;
 
@@ -381,19 +382,19 @@ function gameLoop(timestamp){
 
     if (showEpistasisPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-        drawEpistasisPopup();
+        drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, epistasisEmberFound, showBonusCard, selectedEmber, draggedEmber, bonusCardShownAt);
     } else if (showGermIntroPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-        drawGermIntroPopup();
+        drawGermIntroPopup(ctx, canvas, germIntroCard);
     } else if (showGlovesPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-        drawGlovesPopup();
+        drawGlovesPopup(ctx, canvas, glovesPopupCard);
     } else if (showExtinctPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-        drawExtinctPopup();
+        drawExtinctPopup(ctx, canvas, currentGameState, extinctColor);
     } else if (showPhase2Win) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-        drawPhase2Win();
+        drawPhase2Win(ctx, canvas, phase2WinCard);
     } else {
         embers = embers.filter(ember => ember.immortal || (ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05)));
         if (selectedEmber && !embers.includes(selectedEmber)) {
@@ -497,7 +498,7 @@ function gameLoop(timestamp){
             embers.push(offspring);
             lifetimeEmberCount++;
 
-            if (offspring.flickeredChannel !== null && !epistasisSeen && !isTutorialActive()) {
+            if (offspring.flickeredChannel !== null && !epistasisSeen && currentGameState === GAME_STATE.PLAYING) {
                 epistasisSeen = true;
                 showEpistasisPopup = true;
                 selectedEmber = offspring;
@@ -630,9 +631,9 @@ viruses.forEach(virus => virus.draw(ctx));
     }
 
     //--- drawing UI ----
-            drawEmberInfoPanel();
+            drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, showEpistasisPopup);
             drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
-            drawModeButtons();
+            drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer);
         }
     }
 
@@ -642,127 +643,6 @@ viruses.forEach(virus => virus.draw(ctx));
 
 
 //=== Functions ===
-//Moved out: drawLabel()
-function drawEpistasisPopup(){
-    drawPopupOverlay();
-    ctx.textAlign = 'center';
-    ctx.fillText('EPISTASIS!', canvas.width / 2, canvas.height / 2 - 80);
-    ctx.font = '16px sans-serif';
-    wrapText(ctx, epistasisCards[epistasisCard], canvas.width / 2, canvas.height / 2, 500, 28);
-    
-    if (epistasisCard > 0) {
-        ctx.fillText('◀', canvas.width / 2 - 200, canvas.height / 2 + 80);
-    }
-    if (epistasisEmberFound && epistasisCard < epistasisCards.length - 1) {
-        ctx.fillText('▶', canvas.width / 2 + 200, canvas.height / 2 + 80);
-    } else if (!epistasisEmberFound){
-    ctx.fillText('Click the ember to continue.',canvas.width / 2, canvas.height / 2 + 80); 
-    } else {
-        ctx.fillText('Click anywhere to continue.', canvas.width / 2, canvas.height / 2 + 80);
-    }
-    ctx.fillText(`${epistasisCard + 1} / ${epistasisCards.length}`, canvas.width / 2, canvas.height / 2 + 110);
-
-    drawEmberInfoPanel();
-
-    if (showBonusCard){
-        drawBonusCard();
-    }
-    if (selectedEmber) {
-        selectedEmber.draw(ctx, true);
-    }
-    ctx.shadowBlur = 0;
-}
-
-function drawEmberInfoPanel(){
-    if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup) {
-        return;
-    }
-
-    const panelWidth = 200;
-    const panelHeight = 120;
-    const offset = (selectedEmber.displayRadius ?? selectedEmber.radius) + 15;
-
-    const placeOnRight = selectedEmber.x < canvas.width / 2;
-    let panelX = placeOnRight
-        ? selectedEmber.x + offset
-        : selectedEmber.x - offset - panelWidth;
-    let panelY = selectedEmber.y - panelHeight / 2;
-
-    if (panelY < 0) {
-        panelY = 0;
-    }
-    if (panelY + panelHeight > canvas.height) {
-        panelY = canvas.height - panelHeight;
-    }
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
-    ctx.shadowBlur = 20;
-    ctx.fillRect(panelX, panelY, 200, 120);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'white';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, panelX + 10, panelY + 20);
-    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
-    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, panelX + 10, panelY + 60);
-    ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
-    const cooldownText = selectedEmber.matingCooldown > 0
-        ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s`
-        : selectedEmber.age < 10 ? 'Too young' : 'Ready';
-    ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + 100);
-
-}
-
-function drawBonusCard() {
-    const de = selectedEmber;
-    ctx.fillStyle = 'rgba(0,0,0,1)';
-    ctx.fillRect(canvas.width / 2 - 250, canvas.height / 2 - 130, 500, 260);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('You found it!', canvas.width / 2, canvas.height / 2 - 90);
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    const x = canvas.width / 2 - 220;
-    ctx.fillText(`Allele 1: ${de.colorAlleles[0].value} (${de.colorAlleles[0].strength.toFixed(2)})`, x, canvas.height / 2 - 55);
-    ctx.fillText(`Allele 2: ${de.colorAlleles[1].value} (${de.colorAlleles[1].strength.toFixed(2)})`, x, canvas.height / 2 - 30);
-    ctx.fillText(`RGB: ${Math.round(de.r)}, ${Math.round(de.g)}, ${Math.round(de.b)}`, x, canvas.height / 2 - 5);
-    ctx.fillText(`Flickered: ${de.flickeredChannel}`, x, canvas.height / 2 + 20);
-    ctx.fillText(`Gender: ${de.gender}`, x, canvas.height / 2 + 45);
-    ctx.textAlign = 'center';
-    ctx.fillText('[ Close ]', canvas.width / 2, canvas.height / 2 + 100);
-}
-
-function drawModeButtons(){
-    if (!phase2Started) {
-        return;
-    }
-    const btnX = canvas.width - 370;
-    const btnY = 10;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(btnX, btnY, 130, 50);
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = squishMode ? '#555' : 'white';
-    ctx.fillText('[ grab ]', btnX + 10, btnY + 20);
-    ctx.fillStyle = squishMode ? 'white' : '#555';
-    ctx.fillText('[ squish ]', btnX + 10, btnY + 40);
-
-    if (!glovesUnlocked) {
-        return;
-    }
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(btnX, btnY + 58, 160, 30);
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    const glovesLabel = glovesRemaining > 0 ? `[ gloves x${glovesRemaining} ]` : '[ gloves x0 ]';
-    ctx.fillStyle = glovesActive ? '#5b9bd5' : (glovesRemaining > 0 ? 'white' : '#555');
-    ctx.fillText(glovesLabel, btnX + 10, btnY + 78);
-    if (glovesActive) {
-        ctx.fillStyle = '#5b9bd5';
-        ctx.fillText(`${Math.ceil(glovesTimer)}s`, btnX + 130, btnY + 78);
-    }
-}
 
 function handleEpistasisClick(e) {
     if (showBonusCard) {
@@ -778,8 +658,9 @@ function handleEpistasisClick(e) {
     const onEmber = de && distance(e.clientX, e.clientY, de.x, de.y) < de.radius + 5;
     if (onEmber) { 
     epistasisEmberFound = true;
-    showBonusCard = true; 
-    return; 
+    showBonusCard = true;
+    bonusCardShownAt = Date.now();
+    return;
     }
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
@@ -819,91 +700,6 @@ function triggerVirusOutbreak() {
     viruses.push(new Virus(host, targetAllele));
 }
 
-function drawPhase2Win() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const navY = canvas.height * 0.70;
-    drawPopupOverlay();
-    if (phase2WinCard === 0) {
-        ctx.fillText('The population is thriving.', cx, cy - 20);
-        ctx.font = '28px sans-serif';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 10;
-        ctx.fillText('▶', cx + 280, navY);
-    } else {
-        ctx.font = '16px sans-serif';
-        wrapText(ctx, 'But something is coming. A virus has been detected, and it targets a specific allele. If that allele disappears from your population, it is gone forever.', cx, cy - 20, 500, 28);
-        ctx.font = '28px sans-serif';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 10;
-        ctx.fillText('◀', cx - 200, navY);
-        ctx.shadowBlur = 0;
-        ctx.font = '16px sans-serif';
-        ctx.fillText('Click anywhere to continue.', cx, navY - 30);
-    }
-    ctx.shadowBlur = 0;
-}
-
-function drawExtinctPopup() {
-    const isPlaying = currentGameState === GAME_STATE.PLAYING;
-    drawPopupOverlay();
-    ctx.fillStyle = 'red';
-    ctx.fillText(`The ${extinctColor} allele went extinct.`, canvas.width / 2, canvas.height / 2 - 20);
-    ctx.fillStyle = 'white';
-    ctx.font = '16px sans-serif';
-    ctx.fillText(isPlaying ? 'Click anywhere to continue.' : 'Click anywhere to try again.', canvas.width / 2, canvas.height / 2 + 20);
-}
-
-function drawGermIntroPopup() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const navY = canvas.height * 0.70;
-    drawPopupOverlay();
-    if (germIntroCard === 0) {
-        ctx.fillText("You've touched the petri dish too many times and introduced germs!", cx, cy - 20);
-        ctx.font = '28px sans-serif';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 10;
-        ctx.fillText('▶', cx + 280, navY);
-    } else {
-        ctx.fillText('You need to act fast and SQUISH them.', cx, cy - 20);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('Click the [ squish ] button in the top right, or hold Shift and left-click.', cx, cy + 20);
-        ctx.font = '28px sans-serif';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 10;
-        ctx.fillText('◀', cx - 200, navY);
-        ctx.shadowBlur = 0;
-        ctx.font = '16px sans-serif';
-        ctx.fillText('Click anywhere to continue.', cx, navY - 30);
-    }
-    ctx.shadowBlur = 0;
-}
-
-function drawGlovesPopup() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const navY = canvas.height * 0.70;
-    drawPopupOverlay();
-    if (glovesPopupCard === 0) {
-        ctx.fillText('You found medical gloves!', cx, cy - 20);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('Gloves protect the petri dish from contamination.', cx, cy + 20);
-        ctx.font = '28px sans-serif';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 10;
-        ctx.fillText('▶', cx + 280, navY);
-    } else {
-        ctx.fillText('You have 3 uses, each lasting 60 seconds.', cx, cy - 20);
-        ctx.font = '16px sans-serif';
-        ctx.shadowColor = 'white';
-        ctx.shadowBlur = 10;
-        ctx.fillText('◀', cx - 200, navY);
-        ctx.shadowBlur = 0;
-        ctx.fillText('Click anywhere to continue.', cx, navY - 30);
-    }
-    ctx.shadowBlur = 0;
-}
 
 function restartPhase2() {
     resetToPhase2();
@@ -959,12 +755,3 @@ function applyGermDamage(dt){
 
 }
 
-//--- help function (file specific) ---
-function drawPopupOverlay() {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'white';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-}

@@ -208,6 +208,7 @@ born (tiny) (not implemented)
 - [ ] Implement saturation and glow in `draw()` — alleles are resolved at birth, visual effect TBD. Unsure about this one.
 - [x] Separate genders visually: females are rounded squares, males are circles
 - [x] Delta time refactor — all timers and speeds are now seconds-based, frame-rate independent
+- [ ] Age tint: ember color gradually shifts toward white as it ages — not full white, just a visible indicator of old age. Blend toward white based on `age / lifespan` ratio.
 
 ### Germs
 - [x] Germs: large, black, spiky entities (layered rotating triangles) that the player accidentally introduces by handling the petri dish too much.
