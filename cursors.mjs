@@ -25,8 +25,8 @@ export const [
     cur('./hand_icons/hand_reach_gloved.svg',       60, 24,  8),
     cur('./hand_icons/hand_grab.svg',              38, 24, 24),
     cur('./hand_icons/hand_grab_gloved.svg',        38, 24, 24),
-    cur('./hand_icons/hand_point.svg',             64,  6,  2),
-    cur('./hand_icons/hand_point_gloved.svg',       64,  6,  2),
-    cur('./hand_icons/hand_point_press.svg',        58,  6,  0),
-    cur('./hand_icons/hand_point_press_gloved.svg', 58,  6,  0),
+    cur('./hand_icons/hand_point.svg',             64,  14,  2),
+    cur('./hand_icons/hand_point_gloved.svg',       64,  14,  2),
+    cur('./hand_icons/hand_point_press.svg',        58,  13,  0),
+    cur('./hand_icons/hand_point_press_gloved.svg', 58,  13,  0),
 ]);

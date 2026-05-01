@@ -15,6 +15,25 @@
     <p>Keep the population alive and genetically diverse.<br>
     Drag embers together to encourage mating.
     Don't let them go extinct. </p>
+    <div class="lab-form">
+      <div class="lab-row">
+        <label for="initials">Initials</label>
+        <input type="text" id="initials" maxlength="4" placeholder="S.E.">
+      </div>
+      <div class="lab-row">
+        <label for="source">Source</label>
+        <input type="text" id="source" maxlength="40" placeholder="e.g. Mrs. Hansen's desk">
+      </div>
+      <div class="lab-row lab-row--medium">
+        <label>Medium</label>
+        <div class="medium-options">
+          <label><input type="radio" name="medium" value="LB Agar" checked> LB Agar</label>
+          <label><input type="radio" name="medium" value="Blood Agar"> Blood Agar</label>
+          <label><input type="radio" name="medium" value="MacConkey Agar"> MacConkey Agar</label>
+          <label><input type="radio" name="medium" value="Chocolate Agar"> Chocolate Agar</label>
+        </div>
+      </div>
+    </div>
     <button id="start-button">Start Game</button>
   </div>
   <canvas id="canvas">

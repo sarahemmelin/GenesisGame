@@ -121,7 +121,7 @@ born (tiny) (not implemented)
 - [x] The panel for the individual Ember should follow the Ember (be placed near it). Hidden while dragging and during popups.
 - [ ] Consider if changes to cursor should be made (custom), with maybe blue gloves or something. The grab hand is a bit small.
 - [ ] Fullscreen mode (Esc or X to exit) — needs design consideration for how canvas edges/panels behave at different resolutions
-- [ ] Draw a circular petri dish as the game background — clip the canvas to a circle, draw dish rim and glass texture
+- [ ] Draw a circular petri dish as the game background — clip the canvas to a circle, draw dish rim and glass texture. Tried and scrapped: circular boundary made the playable area too small. Would need a much larger canvas or smaller embers to work.
 - [ ] Consider a help/info menu that reuses the tutorial intro cards as reference material for returning players who skip the tutorial or something like that
 - [x] Decrease flicker ratio + add epistasis popup with game freeze on first flicker event
 - [x] Add intro popup when founding embers reach maturity (explain diploid, allele strength, silent alleles, invite player to inspect)
