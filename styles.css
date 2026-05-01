@@ -75,10 +75,69 @@ canvas {
     cursor: inherit;
 }
 
+input[type="text"] {
+    cursor: text;
+}
+
 #start-button {
     padding: 0.75rem 2rem;
     background-color: crimson;
     color: white;
     border: none;
     font-size: 1rem;
+}
+
+.lab-form {
+    margin: 1.5rem 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.lab-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.lab-row--medium {
+    align-items: flex-start;
+}
+
+.lab-row label:first-child {
+    width: 4.5rem;
+    font-size: 0.85rem;
+    color: #aaa;
+    flex-shrink: 0;
+}
+
+.lab-row input[type="text"] {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #555;
+    color: #fff;
+    font-size: 0.95rem;
+    padding: 0.2rem 0.3rem;
+    outline: none;
+    width: 200px;
+    font-family: monospace;
+}
+
+.lab-row input[type="text"]::placeholder {
+    color: #555;
+}
+
+.medium-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.medium-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #ccc;
 }

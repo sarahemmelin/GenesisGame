@@ -16,14 +16,38 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 //--- Start screen ---
-const startScreen = document.getElementById('start-screen');
-const startButton = document.getElementById('start-button');
+const startScreen   = document.getElementById('start-screen');
+const startButton   = document.getElementById('start-button');
+const initialsInput = document.getElementById('initials');
+const sourceInput   = document.getElementById('source');
+
+// Pre-fill saved values
+initialsInput.value = localStorage.getItem('genesis_initials') ?? '';
+const savedMedium = localStorage.getItem('genesis_medium') ?? 'LB Agar';
+document.querySelector(`input[name="medium"][value="${savedMedium}"]`).checked = true;
+
+let playerInitials = '';
+let playerSource   = '';
+let playerMedium   = 'LB Agar';
+
 startButton.addEventListener('click', () => {
+    playerInitials = initialsInput.value.trim() || '—';
+    playerSource   = sourceInput.value.trim()   || '—';
+    playerMedium   = document.querySelector('input[name="medium"]:checked').value;
+    localStorage.setItem('genesis_initials', playerInitials);
+    localStorage.setItem('genesis_medium',   playerMedium);
     startScreen.style.display = 'none';
     requestAnimationFrame(gameLoop);
 });
 startButton.addEventListener('mouseenter', () => { document.body.style.cursor = CURSOR_POINT; });
 startButton.addEventListener('mouseleave', () => { document.body.style.cursor = CURSOR_OPEN; });
+
+document.querySelectorAll('.medium-options label').forEach(label => {
+    label.addEventListener('mouseenter',  () => { document.body.style.cursor = CURSOR_POINT; });
+    label.addEventListener('mouseleave',  () => { document.body.style.cursor = CURSOR_OPEN; });
+    label.addEventListener('mousedown',   () => { document.body.style.cursor = CURSOR_POINT_PRESS; });
+    label.addEventListener('mouseup',     () => { document.body.style.cursor = CURSOR_POINT; });
+});
 
 // --- State ---
 let mouseX = 0;
@@ -340,73 +364,55 @@ function gameLoop(timestamp){
     const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
     lastTime = timestamp;
 
-//--- Clear canvas and cull dead embers ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     if (showEpistasisPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawEpistasisPopup();
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-    if (showGermIntroPopup) {
+    } else if (showGermIntroPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawGermIntroPopup();
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-    if (showGlovesPopup) {
+    } else if (showGlovesPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawGlovesPopup();
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-    if (showExtinctPopup) {
+    } else if (showExtinctPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawExtinctPopup();
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-    if (showPhase2Win) {
+    } else if (showPhase2Win) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawPhase2Win();
-        requestAnimationFrame(gameLoop);
-        return;
-    }
-
-    embers = embers.filter(ember => ember.immortal || (ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05)));
-    if (selectedEmber && !embers.includes(selectedEmber)){
-        selectedEmber = null;
-    };
-    embers.forEach(ember => {
-        if (ember.matingWith !== null && !embers.includes(ember.matingWith)) {
-            ember.matingWith = null;
+    } else {
+        embers = embers.filter(ember => ember.immortal || (ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05)));
+        if (selectedEmber && !embers.includes(selectedEmber)) {
+            selectedEmber = null;
         }
-    });
-
-    updateTutorial(embers, dt);
-
-    if (!phase2Started && getStep() === TUTORIAL_STEP.GROW && !isShowingGoalCards() && !isShowingMatingSuccess()) {
-        phase2Started = true;
         embers.forEach(ember => {
-            ember.immortal = false;
-            ember.age = 10;
+            if (ember.matingWith !== null && !embers.includes(ember.matingWith)) {
+                ember.matingWith = null;
+            }
         });
-    }
 
-    if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) {
-        embers.forEach(ember => ember.draw(ctx));
-        drawTutorial(ctx);
-        requestAnimationFrame(gameLoop);
-    return;
-    }
+        updateTutorial(embers, dt);
 
-    if (embers.length === 0) {
-        ctx.fillStyle = 'red';
-        ctx.font = 'bold 72px serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('EXTINCT', canvas.width / 2, canvas.height / 2);
-        return;
-    }
+        if (!phase2Started && getStep() === TUTORIAL_STEP.GROW && !isShowingGoalCards() && !isShowingMatingSuccess()) {
+            phase2Started = true;
+            embers.forEach(ember => {
+                ember.immortal = false;
+                ember.age = 10;
+            });
+        }
+
+        if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) {
+            embers.forEach(ember => ember.draw(ctx));
+            drawTutorial(ctx);
+        } else {
+            if (embers.length === 0) {
+                ctx.fillStyle = 'red';
+                ctx.font = 'bold 72px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('EXTINCT', canvas.width / 2, canvas.height / 2);
+                return;
+            }
 
 
     if (embers.length > 50){
@@ -615,15 +621,47 @@ viruses.forEach(virus => virus.draw(ctx));
     }
 
 //--- drawing UI ----
+            drawEmberInfoPanel();
+            drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
+            drawModeButtons();
+        }  // end: not showing tutorial cards
+    }  // end: not showing popup
 
-    drawEmberInfoPanel();
-    drawPopulationPanel(alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
-    drawModeButtons();
+    drawLabel();
     requestAnimationFrame(gameLoop);
 }
 
 
 //=== Functions === 
+
+function drawLabel() {
+    const pad  = 10;
+    const x    = 20;
+    const y    = 20;
+
+    const today   = new Date();
+    const dateStr = today.toLocaleDateString('en-GB');
+    const line1   = `PETRI DISH   ${playerInitials}   ${dateStr}`;
+    const line2   = `Medium: ${playerMedium}   Source: ${playerSource}`;
+
+    ctx.font = 'bold 12px monospace';
+    const w = Math.max(ctx.measureText(line1).width, ctx.measureText(line2).width) + pad * 2;
+    const h = 44;
+
+    ctx.fillStyle = 'rgba(238, 232, 213, 0.92)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, w, h);
+
+    ctx.fillStyle = '#222';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(line1, x + pad, y + pad);
+    ctx.font = '11px monospace';
+    ctx.fillText(line2, x + pad, y + pad + 17);
+}
 
 function drawEpistasisPopup(){
     ctx.shadowBlur = 0;
