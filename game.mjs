@@ -3,9 +3,9 @@ import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
 import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSOR_PINCH, CURSOR_PINCH_GLOVE, CURSOR_POINT, CURSOR_POINT_GLOVE, CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
-import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2 } from "./tutorial.mjs";
+import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance } from "./utilities.mjs";
-import { drawLabel, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawBonusCard, drawEpistasisPopup } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, VIAL_WIDTH, VIAL_HEIGHT, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -46,6 +46,8 @@ startButton.addEventListener('click', () => {
     localStorage.setItem('genesis_medium',   playerMedium);
     canvas.style.backgroundColor = MEDIUM_COLORS[playerMedium] ?? '#1a1a14';
     startScreen.style.display = 'none';
+    initLabelCache(playerInitials, playerMedium, playerSource);
+    initVialCache(canvas);
     requestAnimationFrame(gameLoop);
 });
 startButton.addEventListener('mouseenter', () => { document.body.style.cursor = CURSOR_POINT; });
@@ -63,6 +65,9 @@ document.querySelectorAll('input[name="medium"]').forEach(radio => {
         canvas.style.backgroundColor = MEDIUM_COLORS[radio.value] ?? '#1a1a14';
     });
 });
+
+//=== Constants ===
+const EMBER_HIT_PADDING = 40;
 
 //=== State ===
 let mouseX = 0;
@@ -106,23 +111,16 @@ let extinctColor = '';
 let showPhase2Win = false;
 let phase2WinSeen = false;
 let phase2WinCard = 0;
-let epistasisSeen = false;
-let epistasisEmberFound = false;
-let showEpistasisPopup = false;
-let epistasisCard = 0;
-let showBonusCard = false;
-let bonusCardShownAt = 0;
-let squishMode = false; 
+let squishMode = false;
 let clicksSinceLastGerm = 0;
+
+//--- Vial ---
+let vialContents = [];
+let vialCapacity = 10;
+let showEmptyConfirm = false;
 
 
 //=== Popups ===
-//--- Epistasis cards ---
-let epistasisCards = [
-    "Something just happened. An unusual ember was born. Can you find it?",
-    "Even though the color alleles inherited from its parents did not change, a separate gene, 'the flicker gene', switched one color channel off at birth.",
-    "This is called epistasis. One gene can silence another. The color is still in the DNA, just not showing. This is why appearance alone can't tell you what genes a creature carries."
-];
 
 
 //=== Event listeners ===
@@ -135,7 +133,7 @@ canvas.addEventListener('mousemove', (e) => {
     }
 
     const hoveringEmber = !draggedEmber && embers.find(ember =>
-        distance(ember.x, ember.y, mouseX, mouseY) < ember.radius + 24
+        distance(ember.x, ember.y, mouseX, mouseY) < ember.radius + EMBER_HIT_PADDING
     );
 
     const btnX = canvas.width - 370;
@@ -144,6 +142,27 @@ canvas.addEventListener('mousemove', (e) => {
         (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
         (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
     );
+    const hoveringSkip = currentGameState === GAME_STATE.TUTORIAL &&
+        mouseX >= 20 && mouseX <= 150 && mouseY >= 74 && mouseY <= 98;
+
+    let hoveringVialButton = false;
+    if (currentGameState === GAME_STATE.PLAYING) {
+        const vvx  = getVialX(canvas);
+        const vvy  = getVialY(canvas);
+        const vvcx = vvx + VIAL_WIDTH / 2;
+        const vBtnX1 = vvcx - 55;
+        const vBtnY1 = vvy + VIAL_HEIGHT + 22;
+        const vBtnY2 = vvy + VIAL_HEIGHT + 52;
+        if (showEmptyConfirm) {
+            hoveringVialButton = mouseY >= vBtnY1 + 2 && mouseY <= vBtnY1 + 22 &&
+                ((mouseX >= vvcx - 55 && mouseX <= vvcx - 7) ||
+                 (mouseX >= vvcx + 14 && mouseX <= vvcx + 62));
+        } else {
+            hoveringVialButton = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 &&
+                ((mouseY >= vBtnY1 - 16 && mouseY <= vBtnY1 + 8) ||
+                 (mouseY >= vBtnY2 - 16 && mouseY <= vBtnY2 + 8));
+        }
+    }
 
     const cx = canvas.width / 2;
     const navY = canvas.height * 0.70;
@@ -159,7 +178,7 @@ canvas.addEventListener('mousemove', (e) => {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
-    } else if (hoveringButton || hoveringArrow) {
+    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (hoveringEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH;
@@ -186,14 +205,6 @@ canvas.addEventListener('mousedown', (e) => {
     if (squishMode || e.shiftKey || overButton) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_PRESS_GLOVE : CURSOR_POINT_PRESS;
     }
-    if (showEpistasisPopup) {
-        const de = selectedEmber;
-        if (de && distance(e.clientX, e.clientY, de.x, de.y) < de.radius + 5) {
-            draggedEmber = de;
-        }
-        return;
-    }
-
     if (phase2Started && (squishMode || e.shiftKey)) {
         const germIndex = germs.findIndex(germ =>
             distance(germ.x, germ.y, e.clientX, e.clientY) < germ.radius
@@ -215,7 +226,7 @@ canvas.addEventListener('mousedown', (e) => {
         return;
     }
     draggedEmber = embers.find(ember =>
-        distance(ember.x, ember.y, e.clientX, e.clientY) < ember.radius + 24
+        distance(ember.x, ember.y, e.clientX, e.clientY) < ember.radius + EMBER_HIT_PADDING
     );
     if (draggedEmber) {
         selectedEmber = draggedEmber;
@@ -237,6 +248,17 @@ document.addEventListener('keyup', (e) => {
 });
 
 canvas.addEventListener('mouseup', (e) => {
+    const vx = getVialX(canvas);
+    const vy = getVialY(canvas);
+    const overVial = e.clientX >= vx && e.clientX <= vx + VIAL_WIDTH &&
+                     e.clientY >= vy && e.clientY <= vy + VIAL_HEIGHT;
+
+    if (draggedEmber && overVial && vialContents.length < vialCapacity && currentGameState === GAME_STATE.PLAYING) {
+        vialContents.push(draggedEmber);
+        embers = embers.filter(e => e !== draggedEmber);
+        selectedEmber = null;
+    }
+
     draggedEmber = null;
     if (squishedEmber) {
         squishedEmber.squishHeld = false;
@@ -262,7 +284,7 @@ canvas.addEventListener('mouseup', (e) => {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else {
         const hoveringEmber = embers.find(ember =>
-            distance(ember.x, ember.y, mouseX, mouseY) < ember.radius + 24
+            distance(ember.x, ember.y, mouseX, mouseY) < ember.radius + EMBER_HIT_PADDING
         );
         canvas.style.cursor = hoveringEmber
             ? (glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH)
@@ -272,6 +294,47 @@ canvas.addEventListener('mouseup', (e) => {
 
 
 canvas.addEventListener('click', (e) => {
+    if (currentGameState === GAME_STATE.TUTORIAL &&
+        e.clientX >= 20 && e.clientX <= 150 && e.clientY >= 74 && e.clientY <= 98) {
+        skipTutorial();
+        return;
+    }
+
+    if (currentGameState === GAME_STATE.PLAYING) {
+        const vx   = getVialX(canvas);
+        const vy   = getVialY(canvas);
+        const vcx  = vx + VIAL_WIDTH / 2;
+        const btnW = 110;
+        const btnX1 = vcx - btnW / 2;
+        const btnY1 = vy + VIAL_HEIGHT + 22;
+        const btnY2 = vy + VIAL_HEIGHT + 52;
+
+        if (showEmptyConfirm) {
+            const yesX = vcx - 55;
+            const noX  = vcx + 14;
+            if (e.clientX >= yesX && e.clientX <= yesX + 48 && e.clientY >= btnY1 + 2 && e.clientY <= btnY1 + 22) {
+                vialContents = [];
+                showEmptyConfirm = false;
+                return;
+            }
+            if (e.clientX >= noX && e.clientX <= noX + 48 && e.clientY >= btnY1 + 2 && e.clientY <= btnY1 + 22) {
+                showEmptyConfirm = false;
+                return;
+            }
+            showEmptyConfirm = false;
+            return;
+        }
+
+        if (e.clientX >= btnX1 && e.clientX <= btnX1 + btnW && e.clientY >= btnY1 - 16 && e.clientY <= btnY1 + 8) {
+            if (vialContents.length > 0) { showEmptyConfirm = true; }
+            return;
+        }
+        if (e.clientX >= btnX1 && e.clientX <= btnX1 + btnW && e.clientY >= btnY2 - 16 && e.clientY <= btnY2 + 8) {
+            // [ ship sample ] — placeholder
+            return;
+        }
+    }
+
     const btnX = canvas.width - 370;
     const btnY = 10;
     if (phase2Started && e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
@@ -292,10 +355,6 @@ canvas.addEventListener('click', (e) => {
         return; 
     }
 
-    if (showEpistasisPopup) {
-        handleEpistasisClick(e);
-        return;
-    }
     if (showGlovesPopup) {
         const cx = canvas.width / 2;
         const navY = canvas.height * 0.70;
@@ -361,7 +420,7 @@ canvas.addEventListener('click', (e) => {
 
     handleGermSpawn(e);
     const clickedEmber = embers.find(ember =>
-        distance(ember.x, ember.y, e.offsetX, e.offsetY) < ember.radius + 24
+        distance(ember.x, ember.y, e.offsetX, e.offsetY) < ember.radius + EMBER_HIT_PADDING
     );
     if (clickedEmber){
          selectedEmber = clickedEmber;    
@@ -380,10 +439,7 @@ function gameLoop(timestamp){
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (showEpistasisPopup) {
-        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
-        drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, epistasisEmberFound, showBonusCard, selectedEmber, draggedEmber, bonusCardShownAt);
-    } else if (showGermIntroPopup) {
+    if (showGermIntroPopup) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawGermIntroPopup(ctx, canvas, germIntroCard);
     } else if (showGlovesPopup) {
@@ -498,11 +554,6 @@ function gameLoop(timestamp){
             embers.push(offspring);
             lifetimeEmberCount++;
 
-            if (offspring.flickeredChannel !== null && !epistasisSeen && currentGameState === GAME_STATE.PLAYING) {
-                epistasisSeen = true;
-                showEpistasisPopup = true;
-                selectedEmber = offspring;
-            }
 
         }
         const female = ember.matingWith;
@@ -584,32 +635,23 @@ toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
 viruses.forEach(virus => virus.draw(ctx));
 
 //--- Population state ---
-    const collectAlleleColors = [];
-    embers.forEach(ember => {
-       collectAlleleColors.push(ember.colorAlleles[0].value);
-       collectAlleleColors.push(ember.colorAlleles[1].value);
-    })
-
     const alleleCounts = {};
-        collectAlleleColors.forEach(color => {
-        alleleCounts[color] = (alleleCounts[color] || 0) + 1;
-    });
-
     let flickerTotal = 0;
+    let sizeTotal = 0;
+    let maleCount = 0;
     embers.forEach(ember => {
+        const c0 = ember.colorAlleles[0].value;
+        const c1 = ember.colorAlleles[1].value;
+        alleleCounts[c0] = (alleleCounts[c0] || 0) + 1;
+        alleleCounts[c1] = (alleleCounts[c1] || 0) + 1;
         flickerTotal += (ember.flickerAlleles[0].strength + ember.flickerAlleles[1].strength) / 2;
+        sizeTotal += ember.radius;
+        if (ember.gender === 'male') { maleCount++; }
     });
     const avgFlicker = flickerTotal / embers.length;
-
-    let sizeTotal = 0;
-    embers.forEach(ember => {
-        sizeTotal += ember.radius;
-    });
     const avgSize = sizeTotal / embers.length;
-    const maleCount = embers.filter(e => e.gender === 'male').length;
     const femaleCount = embers.length - maleCount;
-    const firstColor = collectAlleleColors[0];
-    const isFixed = collectAlleleColors.every(value => value === firstColor);
+    const isFixed = Object.keys(alleleCounts).length === 1;
 
     if (phase2Started && !showExtinctPopup && !showPhase2Win && currentGameState === GAME_STATE.TUTORIAL) {
         const extinct = Object.keys(BASE_COLORS).find(color => !alleleCounts[color]);
@@ -631,49 +673,27 @@ viruses.forEach(virus => virus.draw(ctx));
     }
 
     //--- drawing UI ----
-            drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, showEpistasisPopup);
+            drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, false);
             drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
             drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer);
         }
     }
 
-    drawLabel(ctx, canvas, playerInitials, playerMedium, playerSource);
+    if (currentGameState === GAME_STATE.PLAYING) {
+        drawVialContents(ctx, canvas, vialContents);
+        drawVial(ctx, canvas);
+        drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm);
+    }
+    drawLabel(ctx);
+    if (currentGameState === GAME_STATE.TUTORIAL) {
+        drawSkipButton(ctx);
+    }
     requestAnimationFrame(gameLoop);
 }
 
 
 //=== Functions ===
 
-function handleEpistasisClick(e) {
-    if (showBonusCard) {
-        const closeX = canvas.width / 2;
-        const closeY = canvas.height / 2 + 100;
-        if (Math.abs(e.clientX - closeX) < 60 && Math.abs(e.clientY - closeY) < 20) {
-            showBonusCard = false;
-            epistasisCard = 1; 
-        }
-        return;
-    }
-    const de = selectedEmber;
-    const onEmber = de && distance(e.clientX, e.clientY, de.x, de.y) < de.radius + 5;
-    if (onEmber) { 
-    epistasisEmberFound = true;
-    showBonusCard = true;
-    bonusCardShownAt = Date.now();
-    return;
-    }
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const clickedBack = epistasisCard > 0 && Math.abs(e.clientX - (cx - 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
-    const clickedForward = epistasisCard < epistasisCards.length - 1 && Math.abs(e.clientX - (cx + 200)) < 50 && Math.abs(e.clientY - (cy + 80)) < 30;
-    if (clickedBack){
-     epistasisCard--;
-     }
-    else if (clickedForward  && epistasisEmberFound) {
-    epistasisCard++;
-    }
-    else if (epistasisCard === epistasisCards.length - 1) { showEpistasisPopup = false; epistasisCard = 0; }
-}
 
 
 function triggerVirusOutbreak() {
@@ -700,6 +720,26 @@ function triggerVirusOutbreak() {
     viruses.push(new Virus(host, targetAllele));
 }
 
+
+function skipTutorial() {
+    completeTutorial();
+    embers.forEach(ember => {
+        ember.immortal = false;
+        ember.age = 10;
+    });
+    germs = [];
+    viruses = [];
+    phase2Started = true;
+    germIntroSeen = true;
+    glovesUnlocked = true;
+    showGermIntroPopup = false;
+    showGlovesPopup = false;
+    showPhase2Win = false;
+    showExtinctPopup = false;
+    extinctColor = '';
+    selectedEmber = null;
+    currentGameState = GAME_STATE.PLAYING;
+}
 
 function restartPhase2() {
     resetToPhase2();

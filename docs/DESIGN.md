@@ -150,13 +150,63 @@ born (tiny) (not implemented)
 - [x] Mating cooldown tied to radius (larger = longer cooldown)
 - [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
   - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
-- [ ] Win conditions (for each "phase" or stage):
-    - [ ] Achievements (20 of each)
-    - [ ] Collect identical samples (20 identical Embers)
-    - [ ] Get fixation (1 round)
-    - [ ] Every color allele must survive for x amount of time
-- [ ] Collect Embers for later study
 - [ ] Second petri dish (maybe): a migration event where 3–5 random embers are sent to a smaller sub-canvas in the corner, founding an isolated colony. Player can toggle between the two populations and compare how they diverge. Teaches founder effect independently of bottleneck.
+
+---
+
+## Campaign Structure
+
+The game is a sequence of rounds, each on a fresh dish, each with a distinct goal. Goals teach opposite relationships to the gene pool — the player must understand the system deeply to succeed at each one.
+
+| Round | Goal | What it teaches |
+|-------|------|-----------------|
+| Tutorial | Grow to 50, keep all alleles alive | Basics: mating, diversity, germs |
+| Round 1 | Achieve fixation (all embers one allele) | You are the selector — diversity is the default, eliminating it takes effort |
+| Round 2 | Collect 10 albino embers | Rare mutations are real but uncontrollable — patience and luck |
+| Round 3 | Maintain ≥20 of each allele simultaneously | Diversity is fragile and hard to protect under pressure |
+
+- Fixation is an **achievement** in Round 1, not a lose condition (it IS a lose condition in later rounds)
+- Each round starts with a fresh dish and population
+- Rounds are unlocked sequentially
+
+---
+
+## Collection System (Test Tube)
+
+A test tube is drawn on the right-hand panel area (where embers can't travel). The player drags embers into it to collect them.
+
+- Collected embers are **permanently removed** from the dish
+- The tube can be emptied, but emptied embers are gone — not returned to the dish
+- Used to fulfill **Orders** and as the mechanic for Round 2 (albino collection)
+
+---
+
+## Orders
+
+Random short-term missions that arrive during gameplay. Each order specifies:
+- A count (e.g., "3 embers")
+- An allele criteria (e.g., "one gold allele + one blue allele, male")
+
+Completing an order earns **research credits**. Orders are framed as external scientific requests ("A researcher has requested samples matching the following criteria...").
+
+---
+
+## Shop
+
+Accessible via a `[ shop ]` button. Spend research credits on consumables and tools.
+
+**Planned items:**
+- `Gloves` — already in game; should be purchasable from shop
+- `Hormonal drops` — reduces mating cooldown to ~2 seconds for 30 seconds
+- `Microscope` — click an ember to view a detailed microscope overlay with deep genetic stats (allele strengths, generation, RGB breakdown, flickered channel). Purely educational.
+
+---
+
+## Persistence (localStorage)
+
+Research credits, shop unlocks, and completed achievements persist across rounds and browser sessions via `localStorage`. This makes progression feel meaningful — a microscope unlocked stays unlocked.
+
+Already in use: `genesis_initials`, `genesis_medium`.
 - [ ] Divide gameplay into "parts" — each part has its own goals to teach the player something new:
     - [ ] Part 1: introduces the Embers and the KEY GOAL (how to win)
     - [ ] Part 2: introduces the alleles and how to read the UI

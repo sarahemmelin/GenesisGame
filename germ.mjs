@@ -25,9 +25,10 @@ draw(ctx) {
     ctx.save();
     ctx.translate(this.x, this.y);
 
-    //Pass 1 (adding red glow because it doesn't show in the medium otherwise)
+    // Pass 1: red glow
     ctx.shadowColor = '#8b0000';
     ctx.shadowBlur = 18;
+    ctx.fillStyle = '#8b0000';
     for (let i = 0; i < 3; i++) {
         ctx.save();
         ctx.rotate(this.rotation + (i * Math.PI / 3));
@@ -36,13 +37,13 @@ draw(ctx) {
         ctx.lineTo(this.radius * 0.6, this.radius * 0.5);
         ctx.lineTo(-this.radius * 0.6, this.radius * 0.5);
         ctx.closePath();
-        ctx.fillStyle = `rgba(10, 10, 10, 0.85)`;
         ctx.fill();
         ctx.restore();
     }
 
-    //pass 2 (just black)
+    // Pass 2: black cover
     ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.85)';
     for (let i = 0; i < 3; i++) {
         ctx.save();
         ctx.rotate(this.rotation + (i * Math.PI / 3));
@@ -51,7 +52,6 @@ draw(ctx) {
         ctx.lineTo(this.radius * 0.6, this.radius * 0.5);
         ctx.lineTo(-this.radius * 0.6, this.radius * 0.5);
         ctx.closePath();
-        ctx.fillStyle = `rgba(10, 10, 10, 0.85)`;
         ctx.fill();
         ctx.restore();
     }

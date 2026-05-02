@@ -1,5 +1,6 @@
 import Ember from "./ember.mjs";
 import { TUTORIAL_STEP, BASE_COLORS } from "./constants.mjs";
+import { wrapText } from "./utilities.mjs";
 
 //=== State ===
 let step = TUTORIAL_STEP.FIND_AND_MATE;
@@ -30,7 +31,7 @@ let showGoalCards = false;
 let goalCard = 0;
 const goalCards = [
     "Now they can age and die. Keep the population alive.",
-    "There are four colors in this population. Lose all embers of one color and that allele is gone forever.",
+    "Four color alleles exist in this population. Each ember carries two. If every ember carrying a specific allele dies, it's gone from the gene pool forever.",
     "New goal: Grow the population to 50 without losing all alleles of any one color.",
     "Be careful how much you touch the petri dish, you might introduce something unwanted."
 ];
@@ -133,6 +134,20 @@ export function isTutorialActive() {
 }
 
 export function getStep() { return step; }
+
+export function completeTutorial() {
+    step = TUTORIAL_STEP.GROW;
+    showIntro = false;
+    showMatingSuccess = false;
+    matingSuccessCard = 0;
+    matingDetected = true;
+    matingTimer = 0;
+    phase1Complete = true;
+    showGoalCards = false;
+    goalCard = 0;
+    showcaseIndex = 0;
+    showcaseTimer = 0;
+}
 
 export function resetToPhase2() {
     step = TUTORIAL_STEP.GROW;
@@ -249,21 +264,6 @@ function drawMatingSuccess(ctx) {
 }
 
 //--- Help functions ---
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(' ');
-    let line = '';
-    words.forEach(word => {
-        const testLine = line + word + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && line !== '') {
-            ctx.fillText(line, x, y);
-            line = word + ' ';
-            y += lineHeight;
-        } else {
-            line = testLine;
-        }
-    });
-    ctx.fillText(line, x, y);
-}
 
 function makeEmber(color, gender, canvasWidth, canvasHeight) {
     const e = new Ember(Math.random() * canvasWidth, Math.random() * canvasHeight, null, null, {color, gender})

@@ -1,63 +1,243 @@
 import { BASE_COLORS, GAME_STATE } from "./constants.mjs";
 import { wrapText } from "./utilities.mjs";
 
-export function drawLabel(ctx, canvas, playerInitials, playerMedium, playerSource) {
-    const pad  = 10;
-    const x    = 20;
-    const y    = 20;
+let _populationPanelCache = null;
+let _populationPanelKey = null;
+let _labelCache = null;
+let _vialGlassCache = null;
 
+export const VIAL_WIDTH  = 54;
+export const VIAL_HEIGHT = 340;
+
+export function initVialCache(canvas) {
+    const pad = 10;
+    const cw  = VIAL_WIDTH + pad * 2;
+    const ch  = VIAL_HEIGHT + pad * 2;
+    _vialGlassCache = new OffscreenCanvas(cw, ch);
+    const gc  = _vialGlassCache.getContext('2d');
+
+    const cx = cw / 2;
+    const r  = VIAL_WIDTH / 2;
+    const bodyTop = pad;
+    const bodyBottom = ch - pad - r;
+
+    // Outer tube border (left, bottom arc, right)
+    gc.beginPath();
+    gc.moveTo(cx - r, bodyTop);
+    gc.lineTo(cx - r, bodyBottom);
+    gc.arc(cx, bodyBottom, r, Math.PI, 0, true);
+    gc.lineTo(cx + r, bodyTop);
+    gc.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    gc.lineWidth = 1.5;
+    gc.stroke();
+
+    // Left inner highlight (the glass wall catching light)
+    gc.beginPath();
+    gc.moveTo(cx - r + 4, bodyTop);
+    gc.lineTo(cx - r + 4, bodyBottom - 4);
+    gc.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    gc.lineWidth = 1.5;
+    gc.stroke();
+
+    // Rim — two horizontal lines at the top
+    gc.beginPath();
+    gc.moveTo(cx - r, bodyTop);
+    gc.lineTo(cx + r, bodyTop);
+    gc.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    gc.lineWidth = 2;
+    gc.stroke();
+
+    gc.beginPath();
+    gc.moveTo(cx - r, bodyTop + 8);
+    gc.lineTo(cx + r, bodyTop + 8);
+    gc.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    gc.lineWidth = 1;
+    gc.stroke();
+}
+
+export function getVialX(canvas) {
+    return canvas.width - 230 + (230 - VIAL_WIDTH) / 2 - 10;
+}
+
+export function getVialY(canvas) {
+    return canvas.height / 2 - VIAL_HEIGHT / 2;
+}
+
+export function drawVialContents(ctx, canvas, vialContents) {
+    if (vialContents.length === 0) { return; }
+
+    const vx     = getVialX(canvas);
+    const vy     = getVialY(canvas);
+    const r      = 12;
+    const bottom = vy + VIAL_HEIGHT - r - 6;
+
+    vialContents.forEach((ember, i) => {
+        const ex = vx + VIAL_WIDTH / 2;
+        const ey = bottom - i * (r * 2 + 4);
+        const color = `rgb(${Math.round(ember.r)}, ${Math.round(ember.g)}, ${Math.round(ember.b)})`;
+
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = color;
+
+        if (ember.gender === 'female') {
+            ctx.beginPath();
+            ctx.roundRect(ex - r, ey - r, r * 2, r * 2, r * 0.35);
+        } else {
+            ctx.beginPath();
+            ctx.arc(ex, ey, r, 0, Math.PI * 2);
+        }
+        ctx.fill();
+    });
+
+    ctx.shadowBlur = 0;
+}
+
+export function drawVial(ctx, canvas) {
+    if (!_vialGlassCache) { return; }
+    const x = getVialX(canvas);
+    const y = getVialY(canvas);
+    ctx.drawImage(_vialGlassCache, x - 10, y - 10);
+}
+
+export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm) {
+    const vx   = getVialX(canvas);
+    const vy   = getVialY(canvas);
+    const cx   = vx + VIAL_WIDTH / 2;
+    const full = vialContents.length >= vialCapacity;
+
+    // Counter above vial
+    ctx.font = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = full ? '#ff6b6b' : 'rgba(255,255,255,0.7)';
+    ctx.fillText(`${vialContents.length} / ${vialCapacity}`, cx, vy - 10);
+
+    // Buttons below vial
+    const btnY1 = vy + VIAL_HEIGHT + 22;
+    const btnY2 = vy + VIAL_HEIGHT + 52;
+    const btnW  = 110;
+    const btnH  = 24;
+    const btnX  = cx - btnW / 2;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(btnX, btnY1 - 16, btnW, btnH);
+    ctx.fillRect(btnX, btnY2 - 16, btnW, btnH);
+
+    ctx.font = '12px monospace';
+    ctx.fillStyle = vialContents.length > 0 ? 'white' : '#555';
+    ctx.fillText('[ empty vial ]', cx, btnY1);
+
+    ctx.fillStyle = vialContents.length > 0 ? 'white' : '#555';
+    ctx.fillText('[ ship sample ]', cx, btnY2);
+
+    // Confirmation popup
+    if (showEmptyConfirm) {
+        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillRect(btnX - 10, btnY1 - 50, btnW + 20, 90);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(btnX - 10, btnY1 - 50, btnW + 20, 90);
+
+        ctx.fillStyle = 'white';
+        ctx.font = '11px monospace';
+        ctx.fillText('Empty vial?', cx, btnY1 - 30);
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText('Samples are lost.', cx, btnY1 - 14);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(btnX, btnY1 + 2, 48, 20);
+        ctx.fillRect(btnX + 62, btnY1 + 2, 48, 20);
+
+        ctx.font = '11px monospace';
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText('[ yes ]', cx - 30, btnY1 + 16);
+        ctx.fillStyle = 'white';
+        ctx.fillText('[ no ]', cx + 38, btnY1 + 16);
+    }
+}
+
+export function drawSkipButton(ctx) {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(20, 74, 130, 24);
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('[ skip tutorial ]', 30, 90);
+}
+
+export function initLabelCache(playerInitials, playerMedium, playerSource) {
+    const pad     = 10;
     const today   = new Date();
     const dateStr = today.toLocaleDateString('en-GB');
     const line1   = `PETRI DISH   ${playerInitials}   ${dateStr}`;
     const line2   = `Medium: ${playerMedium}   Source: ${playerSource}`;
 
-    ctx.font = 'bold 12px monospace';
-    const w = Math.max(ctx.measureText(line1).width, ctx.measureText(line2).width) + pad * 2;
+    const measure = new OffscreenCanvas(1, 1).getContext('2d');
+    measure.font = 'bold 12px monospace';
+    const w = Math.ceil(Math.max(measure.measureText(line1).width, measure.measureText(line2).width) + pad * 2);
     const h = 44;
 
-    ctx.fillStyle = 'rgba(238, 232, 213, 0.92)';
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, w, h);
+    _labelCache = new OffscreenCanvas(w, h);
+    const gc = _labelCache.getContext('2d');
 
-    ctx.fillStyle = '#222';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(line1, x + pad, y + pad);
-    ctx.font = '11px monospace';
-    ctx.fillText(line2, x + pad, y + pad + 17);
-    ctx.textBaseline = 'alphabetic';
+    gc.fillStyle = 'rgba(238, 232, 213, 0.92)';
+    gc.fillRect(0, 0, w, h);
+    gc.strokeStyle = 'rgba(0,0,0,0.25)';
+    gc.lineWidth = 1;
+    gc.strokeRect(0, 0, w, h);
+
+    gc.fillStyle = '#222';
+    gc.textAlign = 'left';
+    gc.textBaseline = 'top';
+    gc.font = 'bold 12px monospace';
+    gc.fillText(line1, pad, pad);
+    gc.font = '11px monospace';
+    gc.fillText(line2, pad, pad + 17);
+}
+
+export function drawLabel(ctx) {
+    if (_labelCache) {
+        ctx.drawImage(_labelCache, 20, 20);
+    }
 }
 
 export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount) {
-    ctx.shadowBlur = 0;
-    const panelWidth = 220;
-    const panelX = canvas.width - panelWidth - 10;
-    let panelY = 10;
-
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(panelX, panelY, panelWidth, 150 + Object.keys(alleleCounts).length * 20);
-
-    ctx.fillStyle = 'white';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Population: ${embers.length}`, panelX + 10, panelY + 20);
-
-    ctx.fillText(`Allele pool:`, panelX + 10, panelY + 40);
     const colorKeys = Object.keys(BASE_COLORS);
-    colorKeys.forEach((color, i) => {
-        const count = alleleCounts[color];
-        ctx.fillStyle = count ? 'white' : 'red';
-        ctx.fillText(count ? `${color}: ${count}` : `${color}: extinct`, panelX + 30, panelY + 60 + i * 20);
-    });
-    ctx.fillStyle = 'white';
+    const alleleKey = colorKeys.map(c => alleleCounts[c] || 0).join(',');
+    const key = `${embers.length}|${alleleKey}|${avgFlicker.toFixed(2)}|${avgSize.toFixed(1)}|${maleCount}`;
 
-    ctx.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 20);
-    ctx.fillText(`Avg size: ${avgSize.toFixed(1)}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 40);
-    ctx.fillText(`Males: ${maleCount}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 60);
-    ctx.fillText(`Females: ${femaleCount}`, panelX + 10, panelY + 60 + colorKeys.length * 20 + 80);
+    if (key !== _populationPanelKey) {
+        _populationPanelKey = key;
+        const panelWidth = 220;
+        const panelHeight = 150 + colorKeys.length * 20;
+        _populationPanelCache = new OffscreenCanvas(panelWidth, panelHeight);
+        const gc = _populationPanelCache.getContext('2d');
+
+        gc.fillStyle = 'rgba(0,0,0,0.7)';
+        gc.fillRect(0, 0, panelWidth, panelHeight);
+
+        gc.fillStyle = 'white';
+        gc.font = '14px monospace';
+        gc.textAlign = 'left';
+        gc.fillText(`Population: ${embers.length}`, 10, 20);
+        gc.fillText('Allele pool:', 10, 40);
+
+        colorKeys.forEach((color, i) => {
+            const count = alleleCounts[color];
+            gc.fillStyle = count ? 'white' : 'red';
+            gc.fillText(count ? `${color}: ${count}` : `${color}: extinct`, 30, 60 + i * 20);
+        });
+
+        gc.fillStyle = 'white';
+        gc.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, 10, 60 + colorKeys.length * 20 + 20);
+        gc.fillText(`Avg size: ${avgSize.toFixed(1)}`, 10, 60 + colorKeys.length * 20 + 40);
+        gc.fillText(`Males: ${maleCount}`, 10, 60 + colorKeys.length * 20 + 60);
+        gc.fillText(`Females: ${femaleCount}`, 10, 60 + colorKeys.length * 20 + 80);
+    }
+
+    ctx.shadowBlur = 0;
+    ctx.drawImage(_populationPanelCache, canvas.width - 230, 10);
 }
 
 
@@ -80,16 +260,14 @@ export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUn
         return;
     }
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(btnX, btnY + 58, 160, 30);
+    ctx.fillRect(btnX, btnY + 58, 130, 30);
     ctx.font = '14px monospace';
     ctx.textAlign = 'left';
-    const glovesLabel = glovesRemaining > 0 ? `[ gloves x${glovesRemaining} ]` : '[ gloves x0 ]';
+    const glovesLabel = glovesActive
+        ? `[ gloves ${Math.ceil(glovesTimer)}s ]`
+        : glovesRemaining > 0 ? `[ gloves x${glovesRemaining} ]` : '[ gloves x0 ]';
     ctx.fillStyle = glovesActive ? '#5b9bd5' : (glovesRemaining > 0 ? 'white' : '#555');
     ctx.fillText(glovesLabel, btnX + 10, btnY + 78);
-    if (glovesActive) {
-        ctx.fillStyle = '#5b9bd5';
-        ctx.fillText(`${Math.ceil(glovesTimer)}s`, btnX + 130, btnY + 78);
-    }
 }
 
 export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, showEpistasisPopup){
@@ -123,7 +301,30 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
     ctx.textAlign = 'left';
     ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, panelX + 10, panelY + 20);
     ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
-    ctx.fillText(`Flicker: ${selectedEmber.flickeredChannel ?? 'none'}`, panelX + 10, panelY + 60);
+    ctx.fillStyle = 'white';
+    ctx.fillText('Flicker: ', panelX + 10, panelY + 60);
+    let flickerX = panelX + 10 + ctx.measureText('Flicker: ').width;
+    const channelDefs = [
+        { key: 'r', label: 'R', color: 'rgb(255, 80, 80)' },
+        { key: 'g', label: 'G', color: 'rgb(80, 210, 80)' },
+        { key: 'b', label: 'B', color: 'rgb(80, 150, 255)' },
+    ];
+    channelDefs.forEach(ch => {
+        const isFlickered = ch.key === selectedEmber.flickeredChannel;
+        ctx.fillStyle = isFlickered ? 'rgba(255,255,255,0.2)' : ch.color;
+        ctx.fillText(ch.label, flickerX, panelY + 60);
+        const w = ctx.measureText(ch.label).width;
+        if (isFlickered) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(flickerX, panelY + 55);
+            ctx.lineTo(flickerX + w, panelY + 55);
+            ctx.stroke();
+        }
+        flickerX += ctx.measureText(ch.label + ' ').width;
+    });
+    ctx.fillStyle = 'white';
     ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
     const cooldownText = selectedEmber.matingCooldown > 0
         ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s`
@@ -227,6 +428,7 @@ export function drawPhase2Win(ctx, canvas, phase2WinCard) {
     ctx.shadowBlur = 0;
 }
 
+// === LEGACY: Epistasis popup drawing — keep for microscope reuse ===
 export function drawBonusCard(ctx, canvas, selectedEmber, bonusCardShownAt) {
     const de = selectedEmber;
     const cx = canvas.width / 2;
@@ -359,6 +561,8 @@ function drawParentVisual(ctx, cx, centerY, parent1, parent2) {
     });
 }
 
+// === END LEGACY (drawBonusCard + drawParentVisual above) ===
+// === LEGACY: drawEpistasisPopup — keep for microscope reuse ===
 export function drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, epistasisEmberFound, showBonusCard, selectedEmber, draggedEmber, bonusCardShownAt) {
     drawPopupOverlay(ctx, canvas);
     const cx = canvas.width / 2;
@@ -370,6 +574,7 @@ export function drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, e
         if (selectedEmber && selectedEmber.parent1 && selectedEmber.parent2) {
             drawParentVisual(ctx, cx, cy - 110, selectedEmber.parent1, selectedEmber.parent2);
         }
+        ctx.textAlign = 'center';
         ctx.font = '16px sans-serif';
         ctx.fillStyle = 'white';
         ctx.fillText('Something unusual happened.', cx, cy - 20);
@@ -397,10 +602,10 @@ export function drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, e
         ctx.shadowBlur = 0;
         if (epistasisCard === epistasisCards.length - 1) {
             ctx.font = '16px sans-serif';
-            ctx.fillText('Click anywhere to continue.', cx, cy + 50);
+            ctx.fillText('Click anywhere to continue.', cx, cy + 115);
         }
         ctx.font = '16px sans-serif';
-        ctx.fillText(`${epistasisCard + 1} / ${epistasisCards.length}`, cx, cy + 110);
+        ctx.fillText(`${epistasisCard + 1} / ${epistasisCards.length}`, cx, cy + 145);
     }
 
     drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, true);
@@ -412,3 +617,4 @@ export function drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, e
     }
     ctx.shadowBlur = 0;
 }
+// === END LEGACY ===
