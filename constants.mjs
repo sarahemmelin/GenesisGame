@@ -21,9 +21,27 @@ export const GAME_STATE = Object.freeze({
 export const ROUND = Object.freeze({
     ROUND_1: 1,
     ROUND_2: 2,
-    ROUND_3: 3,
-    ROUND_4: 4,
-    ROUND_5: 5,
+    ROUND_3: 3
+});
+
+export const UI_FONT = Object.freeze({
+    BASE: 14,
+    SM:   12,
+    XS:   11,
+});
+
+export const UI_COLORS = Object.freeze({
+    TEXT:          'white',
+    TEXT_DIM:      '#c8c8c8',
+    TEXT_MUTED:    '#888',
+    TEXT_DISABLED: '#555',
+    ACCENT:        '#f0c040',
+    DANGER:        '#ff6b6b',
+    PANEL_BG:      'rgba(0,0,0,0.7)',
+    OVERLAY_BG:    'rgba(0,0,0,0.85)',
+    TAB_ACTIVE:    'rgba(255,255,255,0.15)',
+    TAB_INACTIVE:  'rgba(255,255,255,0.05)',
+    GLOVES:        '#5b9bd5',
 });
 
 export const TUTORIAL_STEP = Object.freeze({
