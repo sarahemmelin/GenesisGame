@@ -3,9 +3,10 @@ import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
 import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSOR_PINCH, CURSOR_PINCH_GLOVE, CURSOR_POINT, CURSOR_POINT_GLOVE, CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE } from "./cursors.mjs";
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
+import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, VIAL_WIDTH, VIAL_HEIGHT, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, VIAL_WIDTH, VIAL_HEIGHT, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -119,6 +120,14 @@ let vialContents = [];
 let vialCapacity = 10;
 let showEmptyConfirm = false;
 
+//--- Orders ---
+let orders = [];
+let activeOrderIndex = 0;
+let requestCooldown = 0;
+let orderPending = false;
+let researchPoints = 0;
+let canShip = false;
+
 
 //=== Popups ===
 
@@ -145,7 +154,22 @@ canvas.addEventListener('mousemove', (e) => {
     const hoveringSkip = currentGameState === GAME_STATE.TUTORIAL &&
         mouseX >= 20 && mouseX <= 150 && mouseY >= 74 && mouseY <= 98;
 
+    let hoveringOrdersPanel = false;
+    if (phase2Started) {
+        const opx  = canvas.width - 230;
+        const tabY = 248 + 24;
+        const tabH = 22;
+        const tabW = 58;
+        const tabsEnd = opx + 6 + orders.length * (tabW + 3);
+        hoveringOrdersPanel =
+            mouseY >= tabY && mouseY <= tabY + tabH && (
+                mouseX >= opx + 6 && mouseX <= tabsEnd ||
+                (orders.length < 3 && mouseX >= tabsEnd && mouseX <= tabsEnd + 44)
+            );
+    }
+
     let hoveringVialButton = false;
+    let hoveringVialEmber = false;
     if (currentGameState === GAME_STATE.PLAYING) {
         const vvx  = getVialX(canvas);
         const vvy  = getVialY(canvas);
@@ -158,10 +182,16 @@ canvas.addEventListener('mousemove', (e) => {
                 ((mouseX >= vvcx - 55 && mouseX <= vvcx - 7) ||
                  (mouseX >= vvcx + 14 && mouseX <= vvcx + 62));
         } else {
-            hoveringVialButton = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 &&
-                ((mouseY >= vBtnY1 - 16 && mouseY <= vBtnY1 + 8) ||
-                 (mouseY >= vBtnY2 - 16 && mouseY <= vBtnY2 + 8));
+            const overEmpty = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY1 - 16 && mouseY <= vBtnY1 + 8;
+            const overShip  = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY2 - 16 && mouseY <= vBtnY2 + 8;
+            hoveringVialButton = (overEmpty && vialContents.length > 0) || (overShip && canShip);
         }
+        const vialEmberR = 12;
+        const vialBottom = vvy + VIAL_HEIGHT - vialEmberR - 6;
+        hoveringVialEmber = vialContents.some((_, i) => {
+            const ey = vialBottom - i * (vialEmberR * 2 + 4);
+            return distance(mouseX, mouseY, vvcx, ey) < vialEmberR + 6;
+        });
     }
 
     const cx = canvas.width / 2;
@@ -178,9 +208,9 @@ canvas.addEventListener('mousemove', (e) => {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
-    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton) {
+    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton || hoveringOrdersPanel) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
-    } else if (hoveringEmber) {
+    } else if (hoveringEmber || hoveringVialEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH;
     } else {
         canvas.style.cursor = glovesActive ? CURSOR_OPEN_GLOVE : CURSOR_OPEN;
@@ -330,8 +360,29 @@ canvas.addEventListener('click', (e) => {
             return;
         }
         if (e.clientX >= btnX1 && e.clientX <= btnX1 + btnW && e.clientY >= btnY2 - 16 && e.clientY <= btnY2 + 8) {
-            // [ ship sample ] — placeholder
+            const activeOrder = orders[activeOrderIndex] ?? null;
+            if (activeOrder) {
+                const totalNeeded = activeOrder.criteria.reduce((sum, line) => sum + line.count, 0);
+                if (vialContents.length === totalNeeded && checkFulfilled(activeOrder, vialContents)) {
+                    researchPoints += activeOrder.reward;
+                    orders.splice(activeOrderIndex, 1);
+                    activeOrderIndex = Math.max(0, activeOrderIndex - 1);
+                    vialContents = [];
+                }
+            }
             return;
+        }
+
+        // Click ember inside vial to select it
+        const vialEmberR = 12;
+        const vialBottom = vy + VIAL_HEIGHT - vialEmberR - 6;
+        for (let i = 0; i < vialContents.length; i++) {
+            const ex = vx + VIAL_WIDTH / 2;
+            const ey = vialBottom - i * (vialEmberR * 2 + 4);
+            if (distance(e.clientX, e.clientY, ex, ey) < vialEmberR + 6) {
+                selectedEmber = vialContents[i];
+                return;
+            }
         }
     }
 
@@ -418,7 +469,31 @@ canvas.addEventListener('click', (e) => {
         return;
     }
 
-    handleGermSpawn(e);
+    // Orders panel — order tabs + request button
+    if (phase2Started) {
+        const px   = canvas.width - 230;
+        const py   = 248;
+        const tabY = py + 24;
+        const tabH = 22;
+        const tabW = 58;
+        orders.forEach((order, i) => {
+            const tx = px + 6 + i * (tabW + 3);
+            if (e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
+                activeOrderIndex = i;
+                order.seen = true;
+            }
+        });
+        const reqTx = px + 6 + orders.length * (tabW + 3);
+        const reqW  = 44;
+        if (orders.length < 3 && !orderPending &&
+            e.clientX >= reqTx && e.clientX <= reqTx + reqW &&
+            e.clientY >= tabY  && e.clientY <= tabY + tabH) {
+            orderPending    = true;
+            requestCooldown = 30;
+        }
+    }
+
+    if (e.clientX < canvas.width - 370) { handleGermSpawn(e); }
     const clickedEmber = embers.find(ember =>
         distance(ember.x, ember.y, e.offsetX, e.offsetY) < ember.radius + EMBER_HIT_PADDING
     );
@@ -436,6 +511,7 @@ let lastTime = 0;
 function gameLoop(timestamp){
     const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
     lastTime = timestamp;
+    canShip = false;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -453,7 +529,7 @@ function gameLoop(timestamp){
         drawPhase2Win(ctx, canvas, phase2WinCard);
     } else {
         embers = embers.filter(ember => ember.immortal || (ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05)));
-        if (selectedEmber && !embers.includes(selectedEmber)) {
+        if (selectedEmber && !embers.includes(selectedEmber) && !vialContents.includes(selectedEmber)) {
             selectedEmber = null;
         }
         embers.forEach(ember => {
@@ -672,17 +748,36 @@ viruses.forEach(virus => virus.draw(ctx));
         return;
     }
 
+    //--- Orders update ---
+            orders = updateOrders(orders, dt);
+            if (activeOrderIndex >= orders.length) {
+                activeOrderIndex = Math.max(0, orders.length - 1);
+            }
+            if (requestCooldown > 0) {
+                requestCooldown -= dt;
+                if (requestCooldown <= 0 && orderPending) {
+                    orders.push(generateOrder());
+                    activeOrderIndex = orders.length - 1;
+                    orderPending     = false;
+                    requestCooldown  = 0;
+                }
+            }
+
     //--- drawing UI ----
+            const activeOrder = orders[activeOrderIndex] ?? null;
+            const totalNeeded = activeOrder ? activeOrder.criteria.reduce((sum, line) => sum + line.count, 0) : 0;
+            canShip = activeOrder !== null && vialContents.length === totalNeeded && checkFulfilled(activeOrder, vialContents);
             drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, false);
             drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
-            drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer);
+            drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints);
+            if (phase2Started) { drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCooldown, orderPending, researchPoints); }
         }
     }
 
     if (currentGameState === GAME_STATE.PLAYING) {
         drawVialContents(ctx, canvas, vialContents);
         drawVial(ctx, canvas);
-        drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm);
+        drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm, canShip);
     }
     drawLabel(ctx);
     if (currentGameState === GAME_STATE.TUTORIAL) {

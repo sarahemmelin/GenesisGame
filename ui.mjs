@@ -1,14 +1,17 @@
-import { BASE_COLORS, GAME_STATE } from "./constants.mjs";
+import { BASE_COLORS, GAME_STATE, UI_FONT, UI_COLORS } from "./constants.mjs";
 import { wrapText } from "./utilities.mjs";
 
+//=== Cache ===
 let _populationPanelCache = null;
 let _populationPanelKey = null;
 let _labelCache = null;
 let _vialGlassCache = null;
 
+//=== Constants ===
 export const VIAL_WIDTH  = 54;
 export const VIAL_HEIGHT = 340;
 
+//=== Vial ===
 export function initVialCache(canvas) {
     const pad = 10;
     const cw  = VIAL_WIDTH + pad * 2;
@@ -39,7 +42,7 @@ export function initVialCache(canvas) {
     gc.lineWidth = 1.5;
     gc.stroke();
 
-    // Rim — two horizontal lines at the top
+    // Rim
     gc.beginPath();
     gc.moveTo(cx - r, bodyTop);
     gc.lineTo(cx + r, bodyTop);
@@ -60,7 +63,7 @@ export function getVialX(canvas) {
 }
 
 export function getVialY(canvas) {
-    return canvas.height / 2 - VIAL_HEIGHT / 2;
+    return 480;
 }
 
 export function drawVialContents(ctx, canvas, vialContents) {
@@ -100,16 +103,16 @@ export function drawVial(ctx, canvas) {
     ctx.drawImage(_vialGlassCache, x - 10, y - 10);
 }
 
-export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm) {
+export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm, canShip) {
     const vx   = getVialX(canvas);
     const vy   = getVialY(canvas);
     const cx   = vx + VIAL_WIDTH / 2;
     const full = vialContents.length >= vialCapacity;
 
     // Counter above vial
-    ctx.font = '13px monospace';
+    ctx.font = `${UI_FONT.SM}px monospace`;
     ctx.textAlign = 'center';
-    ctx.fillStyle = full ? '#ff6b6b' : 'rgba(255,255,255,0.7)';
+    ctx.fillStyle = full ? UI_COLORS.DANGER : 'rgba(255,255,255,0.7)';
     ctx.fillText(`${vialContents.length} / ${vialCapacity}`, cx, vy - 10);
 
     // Buttons below vial
@@ -119,53 +122,44 @@ export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyCon
     const btnH  = 24;
     const btnX  = cx - btnW / 2;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.fillRect(btnX, btnY1 - 16, btnW, btnH);
     ctx.fillRect(btnX, btnY2 - 16, btnW, btnH);
 
-    ctx.font = '12px monospace';
-    ctx.fillStyle = vialContents.length > 0 ? 'white' : '#555';
+    ctx.font = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = vialContents.length > 0 ? 'white' : UI_COLORS.TEXT_DISABLED;
     ctx.fillText('[ empty vial ]', cx, btnY1);
 
-    ctx.fillStyle = vialContents.length > 0 ? 'white' : '#555';
+    ctx.fillStyle = canShip ? UI_COLORS.ACCENT : UI_COLORS.TEXT_DISABLED;
     ctx.fillText('[ ship sample ]', cx, btnY2);
 
     // Confirmation popup
     if (showEmptyConfirm) {
-        ctx.fillStyle = 'rgba(0,0,0,0.85)';
+        ctx.fillStyle = UI_COLORS.OVERLAY_BG;
         ctx.fillRect(btnX - 10, btnY1 - 50, btnW + 20, 90);
         ctx.strokeStyle = 'rgba(255,255,255,0.2)';
         ctx.lineWidth = 1;
         ctx.strokeRect(btnX - 10, btnY1 - 50, btnW + 20, 90);
 
         ctx.fillStyle = 'white';
-        ctx.font = '11px monospace';
+        ctx.font = `${UI_FONT.XS}px monospace`;
         ctx.fillText('Empty vial?', cx, btnY1 - 30);
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillText('Samples are lost.', cx, btnY1 - 14);
 
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillStyle = UI_COLORS.PANEL_BG;
         ctx.fillRect(btnX, btnY1 + 2, 48, 20);
         ctx.fillRect(btnX + 62, btnY1 + 2, 48, 20);
 
-        ctx.font = '11px monospace';
-        ctx.fillStyle = '#ff6b6b';
+        ctx.font = `${UI_FONT.XS}px monospace`;
+        ctx.fillStyle = UI_COLORS.DANGER;
         ctx.fillText('[ yes ]', cx - 30, btnY1 + 16);
         ctx.fillStyle = 'white';
         ctx.fillText('[ no ]', cx + 38, btnY1 + 16);
     }
 }
 
-export function drawSkipButton(ctx) {
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(20, 74, 130, 24);
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText('[ skip tutorial ]', 30, 90);
-}
-
+//=== Label ===
 export function initLabelCache(playerInitials, playerMedium, playerSource) {
     const pad     = 10;
     const today   = new Date();
@@ -192,7 +186,7 @@ export function initLabelCache(playerInitials, playerMedium, playerSource) {
     gc.textBaseline = 'top';
     gc.font = 'bold 12px monospace';
     gc.fillText(line1, pad, pad);
-    gc.font = '11px monospace';
+    gc.font = `${UI_FONT.XS}px monospace`;
     gc.fillText(line2, pad, pad + 17);
 }
 
@@ -202,6 +196,122 @@ export function drawLabel(ctx) {
     }
 }
 
+//=== Tutorial ===
+export function drawSkipButton(ctx) {
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(20, 74, 130, 24);
+    ctx.font = `${UI_FONT.SM}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillText('[ skip tutorial ]', 30, 90);
+}
+
+//=== Panels ===
+
+//--- Orders ---
+export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCooldown, orderPending, researchPoints) {
+    const px  = canvas.width - 230;
+    const py  = 248;
+    const pw  = 220;
+
+    ctx.shadowBlur = 0;
+    ctx.textAlign  = 'left';
+
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(px, py, pw, 185);
+
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT_DIM;
+    ctx.fillText(`ORDERS · ${researchPoints} reputation`, px + 10, py + 18);
+
+    // Tabs
+    const tabY = py + 28;
+    const tabH = 26;
+    const tabW = 62;
+    let   tx   = px + 6;
+
+    orders.forEach((order, i) => {
+        const isActive   = i === activeOrderIndex;
+        const isExpiring = order.expiresIn < 120;
+
+        ctx.fillStyle = isActive ? UI_COLORS.TAB_ACTIVE : UI_COLORS.TAB_INACTIVE;
+        ctx.fillRect(tx, tabY, tabW, tabH);
+
+        const pheno = order.criteria[0].phenotype;
+        if (pheno && pheno !== 'albino' && BASE_COLORS[pheno]) {
+            const rgb     = BASE_COLORS[pheno];
+            ctx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+        } else {
+            ctx.fillStyle = 'white';
+        }
+        ctx.beginPath();
+        ctx.arc(tx + 10, tabY + tabH / 2, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font      = '13px monospace';
+        ctx.fillStyle = isExpiring ? UI_COLORS.DANGER : (isActive ? 'white' : UI_COLORS.TEXT_MUTED);
+        ctx.fillText(order.seen ? 'Order' : '! Order', tx + 18, tabY + 17);
+
+        tx += tabW + 3;
+    });
+
+    // Request button
+    if (orders.length < 3) {
+        const reqW = 50;
+        ctx.fillStyle = UI_COLORS.TAB_INACTIVE;
+        ctx.fillRect(tx, tabY, reqW, tabH);
+        ctx.font = `${UI_FONT.SM}px monospace`;
+        if (orderPending) {
+            const mins = Math.floor(requestCooldown / 60);
+            const secs = Math.floor(requestCooldown % 60);
+            ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+            ctx.fillText(`[${mins}:${String(secs).padStart(2, '0')}]`, tx + 4, tabY + 17);
+        } else {
+            ctx.fillStyle = UI_COLORS.TEXT_DIM;
+            ctx.fillText('[ + ]', tx + 6, tabY + 17);
+        }
+    }
+
+    // Active order content
+    const contentY = tabY + tabH + 12;
+    if (activeOrderIndex !== null && orders[activeOrderIndex]) {
+        const order = orders[activeOrderIndex];
+        let   lineY = contentY;
+
+        ctx.font = `${UI_FONT.BASE}px monospace`;
+        order.criteria.forEach(line => {
+            const genderStr = line.gender ? `${line.gender} ` : '';
+            const phenoStr  = line.phenotype ?? 'any';
+            ctx.fillStyle   = 'white';
+            ctx.fillText(`• ${line.count}× ${genderStr}${phenoStr}`, px + 10, lineY);
+            lineY += 20;
+        });
+
+        ctx.font      = '12px monospace';
+        ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+        ctx.fillText('collect in vial', px + 10, lineY + 4);
+
+        const mins    = Math.floor(order.expiresIn / 60);
+        const secs    = Math.floor(order.expiresIn % 60);
+        ctx.fillStyle = order.expiresIn < 120 ? UI_COLORS.DANGER : UI_COLORS.TEXT_DIM;
+        ctx.fillText(`expires: ${mins}:${String(secs).padStart(2, '0')}`, px + 10, lineY + 20);
+        ctx.fillStyle = UI_COLORS.ACCENT;
+        ctx.fillText(`reward: ${order.reward} reputation`, px + 10, lineY + 36);
+
+    } else if (orders.length === 0) {
+        ctx.font      = '14px monospace';
+        ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+        if (orderPending) {
+            ctx.fillText('Pending order incoming...', px + 10, contentY);
+        } else {
+            ctx.fillText('No active orders.', px + 10, contentY);
+            ctx.fillText('Click [ + ] to request.', px + 10, contentY + 20);
+        }
+    }
+}
+
+//--- Population ---
 export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount) {
     const colorKeys = Object.keys(BASE_COLORS);
     const alleleKey = colorKeys.map(c => alleleCounts[c] || 0).join(',');
@@ -214,11 +324,11 @@ export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicke
         _populationPanelCache = new OffscreenCanvas(panelWidth, panelHeight);
         const gc = _populationPanelCache.getContext('2d');
 
-        gc.fillStyle = 'rgba(0,0,0,0.7)';
+        gc.fillStyle = UI_COLORS.PANEL_BG;
         gc.fillRect(0, 0, panelWidth, panelHeight);
 
         gc.fillStyle = 'white';
-        gc.font = '14px monospace';
+        gc.font = `${UI_FONT.BASE}px monospace`;
         gc.textAlign = 'left';
         gc.fillText(`Population: ${embers.length}`, 10, 20);
         gc.fillText('Allele pool:', 10, 40);
@@ -240,36 +350,45 @@ export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicke
     ctx.drawImage(_populationPanelCache, canvas.width - 230, 10);
 }
 
-
-export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer){
+//--- Mode buttons ---
+export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints){
     if (!phase2Started) {
         return;
     }
     const btnX = canvas.width - 370;
     const btnY = 10;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(btnX, btnY, 130, 50);
-    ctx.font = '14px monospace';
+
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(btnX - 120, btnY, 110, 30);
+    ctx.font = `${UI_FONT.BASE}px monospace`;
     ctx.textAlign = 'left';
-    ctx.fillStyle = squishMode ? '#555' : 'white';
+    ctx.fillStyle = UI_COLORS.ACCENT;
+    ctx.fillText(`${researchPoints} reputation`, btnX - 110, btnY + 20);
+
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(btnX, btnY, 130, 50);
+    ctx.font = `${UI_FONT.BASE}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = squishMode ? UI_COLORS.TEXT_DISABLED : 'white';
     ctx.fillText('[ grab ]', btnX + 10, btnY + 20);
-    ctx.fillStyle = squishMode ? 'white' : '#555';
+    ctx.fillStyle = squishMode ? 'white' : UI_COLORS.TEXT_DISABLED;
     ctx.fillText('[ squish ]', btnX + 10, btnY + 40);
 
     if (!glovesUnlocked) {
         return;
     }
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.fillRect(btnX, btnY + 58, 130, 30);
-    ctx.font = '14px monospace';
+    ctx.font = `${UI_FONT.BASE}px monospace`;
     ctx.textAlign = 'left';
     const glovesLabel = glovesActive
         ? `[ gloves ${Math.ceil(glovesTimer)}s ]`
         : glovesRemaining > 0 ? `[ gloves x${glovesRemaining} ]` : '[ gloves x0 ]';
-    ctx.fillStyle = glovesActive ? '#5b9bd5' : (glovesRemaining > 0 ? 'white' : '#555');
+    ctx.fillStyle = glovesActive ? UI_COLORS.GLOVES : (glovesRemaining > 0 ? 'white' : UI_COLORS.TEXT_DISABLED);
     ctx.fillText(glovesLabel, btnX + 10, btnY + 78);
 }
 
+//--- Ember info ---
 export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, showEpistasisPopup){
     if (!selectedEmber || draggedEmber === selectedEmber || showEpistasisPopup) {
         return;
@@ -291,13 +410,13 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
     if (panelY + panelHeight > canvas.height) {
         panelY = canvas.height - panelHeight;
     }
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
     ctx.fillRect(panelX, panelY, 200, 120);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'white';
-    ctx.font = '14px monospace';
+    ctx.font = `${UI_FONT.BASE}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, panelX + 10, panelY + 20);
     ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
@@ -330,12 +449,12 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
         ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s`
         : selectedEmber.age < 10 ? 'Too young' : 'Ready';
     ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + 100);
-
 }
 
+//=== Popups ===
 export function drawPopupOverlay(ctx, canvas) {
     ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    ctx.fillStyle = UI_COLORS.OVERLAY_BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = 'white';
     ctx.font = 'bold 22px sans-serif';
@@ -428,7 +547,7 @@ export function drawPhase2Win(ctx, canvas, phase2WinCard) {
     ctx.shadowBlur = 0;
 }
 
-// === LEGACY: Epistasis popup drawing — keep for microscope reuse ===
+//=== Legacy (epistasis popup — keep for microscope reuse later sometime) ===
 export function drawBonusCard(ctx, canvas, selectedEmber, bonusCardShownAt) {
     const de = selectedEmber;
     const cx = canvas.width / 2;
@@ -446,7 +565,7 @@ export function drawBonusCard(ctx, canvas, selectedEmber, bonusCardShownAt) {
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.fillText('Inherited from parents:', cx, cy - 85);
 
-    ctx.font = '14px monospace';
+    ctx.font = `${UI_FONT.BASE}px monospace`;
     ctx.textAlign = 'left';
     const x = cx - 220;
 
@@ -543,7 +662,7 @@ function drawParentVisual(ctx, cx, centerY, parent1, parent2) {
     ctx.shadowBlur = 0;
 
     // Alleles below each parent
-    ctx.font = '12px monospace';
+    ctx.font = `${UI_FONT.SM}px monospace`;
     ctx.textAlign = 'left';
     const alY1 = centerY + r + 20;
     const alY2 = centerY + r + 38;
@@ -561,8 +680,6 @@ function drawParentVisual(ctx, cx, centerY, parent1, parent2) {
     });
 }
 
-// === END LEGACY (drawBonusCard + drawParentVisual above) ===
-// === LEGACY: drawEpistasisPopup — keep for microscope reuse ===
 export function drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, epistasisEmberFound, showBonusCard, selectedEmber, draggedEmber, bonusCardShownAt) {
     drawPopupOverlay(ctx, canvas);
     const cx = canvas.width / 2;
@@ -617,4 +734,3 @@ export function drawEpistasisPopup(ctx, canvas, epistasisCard, epistasisCards, e
     }
     ctx.shadowBlur = 0;
 }
-// === END LEGACY ===
