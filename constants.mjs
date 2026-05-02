@@ -32,9 +32,9 @@ export const UI_FONT = Object.freeze({
 
 export const UI_COLORS = Object.freeze({
     TEXT:          'white',
-    TEXT_DIM:      '#c8c8c8',
-    TEXT_MUTED:    '#888',
-    TEXT_DISABLED: '#555',
+    TEXT_DIM:      '#e2e2e2',
+    TEXT_MUTED:    '#a9a9a9',
+    TEXT_DISABLED: '#9c9c9c',
     ACCENT:        '#f0c040',
     DANGER:        '#ff6b6b',
     PANEL_BG:      'rgba(0,0,0,0.7)',
