@@ -11,9 +11,19 @@ export const BASE_COLORS = {
 };
 
 export const GAME_STATE = Object.freeze({
-    TUTORIAL: 'tutorial',
-    PLAYING: 'playing',
-    GAME_OVER: 'game_over'
+    TUTORIAL:    'tutorial',
+    ROUND_INTRO: 'round_intro',
+    PLAYING:     'playing',
+    ROUND_WIN:   'round_win',
+    GAME_OVER:   'game_over',
+});
+
+export const ROUND = Object.freeze({
+    ROUND_1: 1,
+    ROUND_2: 2,
+    ROUND_3: 3,
+    ROUND_4: 4,
+    ROUND_5: 5,
 });
 
 export const TUTORIAL_STEP = Object.freeze({
