@@ -135,6 +135,20 @@ export function isTutorialActive() {
 
 export function getStep() { return step; }
 
+export function completeTutorial() {
+    step = TUTORIAL_STEP.GROW;
+    showIntro = false;
+    showMatingSuccess = false;
+    matingSuccessCard = 0;
+    matingDetected = true;
+    matingTimer = 0;
+    phase1Complete = true;
+    showGoalCards = false;
+    goalCard = 0;
+    showcaseIndex = 0;
+    showcaseTimer = 0;
+}
+
 export function resetToPhase2() {
     step = TUTORIAL_STEP.GROW;
     showIntro = false;
