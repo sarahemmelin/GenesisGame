@@ -1,4 +1,4 @@
-import { BASE_COLORS, GAME_STATE, UI_FONT, UI_COLORS } from "./constants.mjs";
+import { BASE_COLORS, GAME_STATE, UI_FONT, UI_COLORS, SHOP_ITEMS } from "./constants.mjs";
 import { wrapText } from "./utilities.mjs";
 
 //=== Cache ===
@@ -259,7 +259,7 @@ export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCo
 
     ctx.font      = `${fsm}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT_DIM;
-    ctx.fillText(`ORDERS · ${researchPoints} reputation`, px + 10, py + 18);
+    ctx.fillText(`SAMPLE ORDERS · ${researchPoints} reputation`, px + 10, py + 18);
 
     // Tabs
     const tabY = py + 28;
@@ -392,7 +392,7 @@ export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicke
 }
 
 //--- Mode buttons ---
-export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints){
+export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints, antibioticSprays, hormoneDrops, hormoneActive, hormoneTimer){
     if (!phase2Started) {
         return;
     }
@@ -402,7 +402,7 @@ export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUn
     const btnY  = 10;
 
     ctx.fillStyle = UI_COLORS.PANEL_BG;
-    ctx.fillRect(btnX - 120, btnY, 110, 30);
+    ctx.fillRect(btnX - 130, btnY, 120, 30);
     ctx.font = `${fbase}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillStyle = UI_COLORS.ACCENT;
@@ -429,6 +429,126 @@ export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUn
         : glovesRemaining > 0 ? `[ gloves x${glovesRemaining} ]` : '[ gloves x0 ]';
     ctx.fillStyle = glovesActive ? UI_COLORS.GLOVES : (glovesRemaining > 0 ? 'white' : UI_COLORS.TEXT_DISABLED);
     ctx.fillText(glovesLabel, btnX + 10, btnY + 78);
+
+    if (antibioticSprays > 0) {
+        ctx.fillStyle = UI_COLORS.PANEL_BG;
+        ctx.fillRect(btnX, btnY + 96, 130, 30);
+        ctx.font      = `${fbase}px monospace`;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = 'white';
+        ctx.fillText(`[ spray x${antibioticSprays} ]`, btnX + 10, btnY + 116);
+    }
+
+    if (hormoneDrops > 0 || hormoneActive) {
+        ctx.fillStyle = UI_COLORS.PANEL_BG;
+        ctx.fillRect(btnX, btnY + 134, 130, 30);
+        ctx.font      = `${fbase}px monospace`;
+        ctx.textAlign = 'left';
+        const hormoneLabel = hormoneActive
+            ? `[ drops ${Math.ceil(hormoneTimer)}s ]`
+            : `[ drops x${hormoneDrops} ]`;
+        ctx.fillStyle = hormoneActive ? UI_COLORS.ACCENT : 'white';
+        ctx.fillText(hormoneLabel, btnX + 10, btnY + 154);
+    }
+}
+
+//--- Shop ---
+export function drawShopButton(ctx, canvas) {
+    const s     = getUIScale(canvas);
+    const fbase = Math.max(9, Math.round(UI_FONT.BASE * s));
+    const btnX  = canvas.width - 370;
+    const btnY  = 10;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle  = UI_COLORS.PANEL_BG;
+    ctx.fillRect(btnX - 130, btnY + 34, 120, 28);
+    ctx.font      = `${fbase}px monospace`;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'white';
+    ctx.fillText('[ shop ]', btnX - 110, btnY + 51);
+}
+
+export function drawShopPopup(ctx, canvas, researchPoints, microscopeUnlocked) {
+    const cx  = canvas.width / 2;
+    const cy  = canvas.height / 2;
+    const pw  = 380;
+    const ph  = 400;
+    const px  = cx - pw / 2;
+    const py  = cy - ph / 2;
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle  = UI_COLORS.OVERLAY_BG;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'rgba(15, 15, 15, 0.98)';
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, pw, ph);
+
+    ctx.font      = 'bold 16px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'white';
+    ctx.fillText('RESEARCH STORE', px + 16, py + 26);
+
+    ctx.font      = '13px monospace';
+    ctx.fillStyle = UI_COLORS.ACCENT;
+    ctx.fillText(`Balance: ${researchPoints} reputation`, px + 16, py + 46);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(px, py + 58);
+    ctx.lineTo(px + pw, py + 58);
+    ctx.stroke();
+
+    const itemH = 70;
+    SHOP_ITEMS.forEach((item, i) => {
+        const iy        = py + 66 + i * itemH;
+        const canAfford = researchPoints >= item.cost;
+        const isOwned   = item.id === 'microscope' && microscopeUnlocked;
+
+        ctx.font      = '14px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = isOwned ? UI_COLORS.TEXT_DISABLED : 'white';
+        ctx.fillText(item.label, px + 16, iy + 18);
+
+        ctx.textAlign = 'right';
+        ctx.fillStyle = isOwned   ? UI_COLORS.TEXT_DISABLED
+                      : canAfford ? UI_COLORS.ACCENT
+                      : UI_COLORS.TEXT_MUTED;
+        ctx.fillText(isOwned ? '— owned —' : `${item.cost} rep`, px + pw - 16, iy + 18);
+
+        ctx.textAlign = 'left';
+        ctx.font      = '12px monospace';
+        ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+        ctx.fillText(item.desc, px + 16, iy + 36);
+
+        if (!isOwned) {
+            ctx.fillStyle = canAfford ? UI_COLORS.PANEL_BG : 'rgba(0,0,0,0.2)';
+            ctx.fillRect(px + pw - 76, iy + 42, 60, 20);
+            ctx.font      = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = canAfford ? 'white' : UI_COLORS.TEXT_DISABLED;
+            ctx.fillText('[ buy ]', px + pw - 46, iy + 56);
+        }
+
+        if (i < SHOP_ITEMS.length - 1) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+            ctx.lineWidth   = 1;
+            ctx.beginPath();
+            ctx.moveTo(px + 16, iy + 67);
+            ctx.lineTo(px + pw - 16, iy + 67);
+            ctx.stroke();
+        }
+    });
+
+    const closeY = py + 66 + SHOP_ITEMS.length * itemH + 12;
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(cx - 44, closeY, 88, 24);
+    ctx.font      = '13px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'white';
+    ctx.fillText('[ close ]', cx, closeY + 16);
 }
 
 //--- Ember info ---
@@ -495,6 +615,25 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
         ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s`
         : selectedEmber.age < 10 ? 'Too young' : 'Ready';
     ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + lh * 5);
+}
+
+//--- Microscope ---
+export function drawMicroscopeOverlay(ctx, embers) {
+    ctx.shadowBlur = 0;
+    embers.forEach(ember => {
+        const dotR = 3;
+        const dotY = ember.y - (ember.displayRadius ?? ember.radius) - 10;
+        ember.colorAlleles.forEach((allele, i) => {
+            const rgb   = BASE_COLORS[allele.value];
+            const alpha = 0.3 + allele.strength * 0.7;
+            ctx.beginPath();
+            ctx.arc(ember.x + (i === 0 ? -5 : 5), dotY, dotR, 0, Math.PI * 2);
+            ctx.fillStyle = rgb
+                ? `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`
+                : `rgba(255,255,255,${alpha})`;
+            ctx.fill();
+        });
+    });
 }
 
 //=== Popups ===
