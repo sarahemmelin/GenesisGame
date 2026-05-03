@@ -289,6 +289,12 @@ export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCo
         ctx.fillStyle = isExpiring ? UI_COLORS.DANGER : (isActive ? 'white' : UI_COLORS.TEXT_MUTED);
         ctx.fillText(order.seen ? 'Order' : '! Order', tx + 18, tabY + Math.round(tabH * 0.65));
 
+        ctx.font      = '10px monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.textAlign = 'right';
+        ctx.fillText('×', tx + tabW - 4, tabY + 11);
+        ctx.textAlign = 'left';
+
         tx += tabW + 3;
     });
 

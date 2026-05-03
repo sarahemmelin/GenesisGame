@@ -570,20 +570,31 @@ canvas.addEventListener('click', (e) => {
         const tabY = py + 28;
         const tabH = Math.round(26 * getUIScale(canvas));
         const tabW = 68;
+        let   dismissed = false;
         orders.forEach((order, i) => {
+            if (dismissed) { return; }
             const tx = px + 6 + i * (tabW + 3);
+            if (e.clientX >= tx + tabW - 16 && e.clientX <= tx + tabW &&
+                e.clientY >= tabY && e.clientY <= tabY + tabH) {
+                orders.splice(i, 1);
+                activeOrderIndex = Math.max(0, Math.min(activeOrderIndex, orders.length - 1));
+                dismissed = true;
+                return;
+            }
             if (e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
                 activeOrderIndex = i;
                 order.seen = true;
             }
         });
-        const reqTx = px + 6 + orders.length * (tabW + 3);
-        const reqW  = 50;
-        if (orders.length < 3 && !orderPending &&
-            e.clientX >= reqTx && e.clientX <= reqTx + reqW &&
-            e.clientY >= tabY  && e.clientY <= tabY + tabH) {
-            orderPending    = true;
-            requestCooldown = 30;
+        if (!dismissed) {
+            const reqTx = px + 6 + orders.length * (tabW + 3);
+            const reqW  = 50;
+            if (orders.length < 3 && !orderPending &&
+                e.clientX >= reqTx && e.clientX <= reqTx + reqW &&
+                e.clientY >= tabY  && e.clientY <= tabY + tabH) {
+                orderPending    = true;
+                requestCooldown = 30;
+            }
         }
     }
 
