@@ -6,7 +6,7 @@ import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, VIAL_WIDTH, VIAL_HEIGHT, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -68,7 +68,7 @@ document.querySelectorAll('input[name="medium"]').forEach(radio => {
 });
 
 //=== Constants ===
-const EMBER_HIT_PADDING = 40;
+const EMBER_HIT_PADDING = 30;
 
 //=== State ===
 let mouseX = 0;
@@ -157,14 +157,14 @@ canvas.addEventListener('mousemove', (e) => {
     let hoveringOrdersPanel = false;
     if (phase2Started) {
         const opx  = canvas.width - 230;
-        const tabY = 248 + 24;
-        const tabH = 22;
-        const tabW = 58;
+        const tabY = 248 + 28;
+        const tabH = Math.round(26 * getUIScale(canvas));
+        const tabW = 68;
         const tabsEnd = opx + 6 + orders.length * (tabW + 3);
         hoveringOrdersPanel =
             mouseY >= tabY && mouseY <= tabY + tabH && (
                 mouseX >= opx + 6 && mouseX <= tabsEnd ||
-                (orders.length < 3 && mouseX >= tabsEnd && mouseX <= tabsEnd + 44)
+                (orders.length < 3 && mouseX >= tabsEnd && mouseX <= tabsEnd + 50)
             );
     }
 
@@ -175,8 +175,9 @@ canvas.addEventListener('mousemove', (e) => {
         const vvy  = getVialY(canvas);
         const vvcx = vvx + VIAL_WIDTH / 2;
         const vBtnX1 = vvcx - 55;
-        const vBtnY1 = vvy + VIAL_HEIGHT + 22;
-        const vBtnY2 = vvy + VIAL_HEIGHT + 52;
+        const vvh    = getVialHeight(canvas);
+        const vBtnY1 = vvy + vvh + 22;
+        const vBtnY2 = vvy + vvh + 52;
         if (showEmptyConfirm) {
             hoveringVialButton = mouseY >= vBtnY1 + 2 && mouseY <= vBtnY1 + 22 &&
                 ((mouseX >= vvcx - 55 && mouseX <= vvcx - 7) ||
@@ -186,8 +187,8 @@ canvas.addEventListener('mousemove', (e) => {
             const overShip  = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY2 - 16 && mouseY <= vBtnY2 + 8;
             hoveringVialButton = (overEmpty && vialContents.length > 0) || (overShip && canShip);
         }
-        const vialEmberR = 12;
-        const vialBottom = vvy + VIAL_HEIGHT - vialEmberR - 6;
+        const vialEmberR = getVialEmberR(canvas, vialCapacity);
+        const vialBottom = vvy + vvh - vialEmberR - 6;
         hoveringVialEmber = vialContents.some((_, i) => {
             const ey = vialBottom - i * (vialEmberR * 2 + 4);
             return distance(mouseX, mouseY, vvcx, ey) < vialEmberR + 6;
@@ -281,7 +282,7 @@ canvas.addEventListener('mouseup', (e) => {
     const vx = getVialX(canvas);
     const vy = getVialY(canvas);
     const overVial = e.clientX >= vx && e.clientX <= vx + VIAL_WIDTH &&
-                     e.clientY >= vy && e.clientY <= vy + VIAL_HEIGHT;
+                     e.clientY >= vy && e.clientY <= vy + getVialHeight(canvas);
 
     if (draggedEmber && overVial && vialContents.length < vialCapacity && currentGameState === GAME_STATE.PLAYING) {
         vialContents.push(draggedEmber);
@@ -336,8 +337,9 @@ canvas.addEventListener('click', (e) => {
         const vcx  = vx + VIAL_WIDTH / 2;
         const btnW = 110;
         const btnX1 = vcx - btnW / 2;
-        const btnY1 = vy + VIAL_HEIGHT + 22;
-        const btnY2 = vy + VIAL_HEIGHT + 52;
+        const vh    = getVialHeight(canvas);
+        const btnY1 = vy + vh + 22;
+        const btnY2 = vy + vh + 52;
 
         if (showEmptyConfirm) {
             const yesX = vcx - 55;
@@ -374,8 +376,8 @@ canvas.addEventListener('click', (e) => {
         }
 
         // Click ember inside vial to select it
-        const vialEmberR = 12;
-        const vialBottom = vy + VIAL_HEIGHT - vialEmberR - 6;
+        const vialEmberR = getVialEmberR(canvas, vialCapacity);
+        const vialBottom = vy + vh - vialEmberR - 6;
         for (let i = 0; i < vialContents.length; i++) {
             const ex = vx + VIAL_WIDTH / 2;
             const ey = vialBottom - i * (vialEmberR * 2 + 4);
@@ -473,9 +475,9 @@ canvas.addEventListener('click', (e) => {
     if (phase2Started) {
         const px   = canvas.width - 230;
         const py   = 248;
-        const tabY = py + 24;
-        const tabH = 22;
-        const tabW = 58;
+        const tabY = py + 28;
+        const tabH = Math.round(26 * getUIScale(canvas));
+        const tabW = 68;
         orders.forEach((order, i) => {
             const tx = px + 6 + i * (tabW + 3);
             if (e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
@@ -484,7 +486,7 @@ canvas.addEventListener('click', (e) => {
             }
         });
         const reqTx = px + 6 + orders.length * (tabW + 3);
-        const reqW  = 44;
+        const reqW  = 50;
         if (orders.length < 3 && !orderPending &&
             e.clientX >= reqTx && e.clientX <= reqTx + reqW &&
             e.clientY >= tabY  && e.clientY <= tabY + tabH) {
@@ -775,13 +777,13 @@ viruses.forEach(virus => virus.draw(ctx));
     }
 
     if (currentGameState === GAME_STATE.PLAYING) {
-        drawVialContents(ctx, canvas, vialContents);
+        drawVialContents(ctx, canvas, vialContents, vialCapacity);
         drawVial(ctx, canvas);
         drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm, canShip);
     }
     drawLabel(ctx);
     if (currentGameState === GAME_STATE.TUTORIAL) {
-        drawSkipButton(ctx);
+        drawSkipButton(ctx, canvas);
     }
     requestAnimationFrame(gameLoop);
 }
