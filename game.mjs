@@ -2,11 +2,11 @@ import Ember from "./ember.mjs";
 import Germ from "./germ.mjs";
 import Virus from "./virus.mjs";
 import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSOR_PINCH, CURSOR_PINCH_GLOVE, CURSOR_POINT, CURSOR_POINT_GLOVE, CURSOR_POINT_PRESS, CURSOR_POINT_PRESS_GLOVE } from "./cursors.mjs";
-import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP } from "./constants.mjs";
+import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.mjs";
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -128,6 +128,14 @@ let orderPending = false;
 let researchPoints = 0;
 let canShip = false;
 
+//--- Shop ---
+let showShop           = false;
+let microscopeUnlocked = false;
+let hormoneDrops       = 0;
+let hormoneActive      = false;
+let hormoneTimer       = 0;
+let antibioticSprays   = 0;
+
 
 //=== Popups ===
 
@@ -149,7 +157,9 @@ canvas.addEventListener('mousemove', (e) => {
     const btnY = 10;
     const hoveringButton = phase2Started && (
         (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
-        (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
+        (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88) ||
+        (glovesUnlocked && antibioticSprays > 0 && mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY + 96 && mouseY <= btnY + 126) ||
+        (glovesUnlocked && (hormoneDrops > 0 || hormoneActive) && mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY + 134 && mouseY <= btnY + 164)
     );
     const hoveringSkip = currentGameState === GAME_STATE.TUTORIAL &&
         mouseX >= 20 && mouseX <= 150 && mouseY >= 74 && mouseY <= 98;
@@ -166,6 +176,34 @@ canvas.addEventListener('mousemove', (e) => {
                 mouseX >= opx + 6 && mouseX <= tabsEnd ||
                 (orders.length < 3 && mouseX >= tabsEnd && mouseX <= tabsEnd + 50)
             );
+    }
+
+    let hoveringShopUI = false;
+    if (phase2Started) {
+        const shopBtnX = canvas.width - 490;
+        if (mouseX >= shopBtnX && mouseX <= shopBtnX + 110 && mouseY >= 44 && mouseY <= 68) {
+            hoveringShopUI = true;
+        }
+    }
+    if (showShop) {
+        const scx = canvas.width / 2;
+        const scy = canvas.height / 2;
+        const spx = scx - 190;
+        const spy = scy - 200;
+        const itemH = 70;
+        SHOP_ITEMS.forEach((item, i) => {
+            const iy      = spy + 66 + i * itemH;
+            const isOwned = item.id === 'microscope' && microscopeUnlocked;
+            if (!isOwned && researchPoints >= item.cost &&
+                mouseX >= spx + 380 - 76 && mouseX <= spx + 380 - 16 &&
+                mouseY >= iy + 42 && mouseY <= iy + 62) {
+                hoveringShopUI = true;
+            }
+        });
+        const closeY = spy + 66 + SHOP_ITEMS.length * itemH + 12;
+        if (mouseX >= scx - 44 && mouseX <= scx + 44 && mouseY >= closeY && mouseY <= closeY + 24) {
+            hoveringShopUI = true;
+        }
     }
 
     let hoveringVialButton = false;
@@ -209,7 +247,7 @@ canvas.addEventListener('mousemove', (e) => {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
-    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton || hoveringOrdersPanel) {
+    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton || hoveringOrdersPanel || hoveringShopUI) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (hoveringEmber || hoveringVialEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH;
@@ -325,6 +363,39 @@ canvas.addEventListener('mouseup', (e) => {
 
 
 canvas.addEventListener('click', (e) => {
+    if (showShop) {
+        const scx   = canvas.width / 2;
+        const scy   = canvas.height / 2;
+        const spx   = scx - 190;
+        const spy   = scy - 200;
+        const itemH = 70;
+        SHOP_ITEMS.forEach((item, i) => {
+            const iy        = spy + 66 + i * itemH;
+            const isOwned   = item.id === 'microscope' && microscopeUnlocked;
+            const canAfford = researchPoints >= item.cost;
+            if (!isOwned && canAfford &&
+                e.clientX >= spx + 380 - 76 && e.clientX <= spx + 380 - 16 &&
+                e.clientY >= iy + 42 && e.clientY <= iy + 62) {
+                researchPoints -= item.cost;
+                if (item.id === 'antibiotic_spray') {
+                    antibioticSprays++;
+                } else if (item.id === 'gloves_refill') {
+                    glovesRemaining += 3;
+                } else if (item.id === 'hormonal_drops') {
+                    hormoneDrops++;
+                } else if (item.id === 'microscope') {
+                    microscopeUnlocked = true;
+                }
+            }
+        });
+        const closeY = spy + 66 + SHOP_ITEMS.length * itemH + 12;
+        if (e.clientX >= scx - 44 && e.clientX <= scx + 44 &&
+            e.clientY >= closeY && e.clientY <= closeY + 24) {
+            showShop = false;
+        }
+        return;
+    }
+
     if (currentGameState === GAME_STATE.TUTORIAL &&
         e.clientX >= 20 && e.clientX <= 150 && e.clientY >= 74 && e.clientY <= 98) {
         skipTutorial();
@@ -395,6 +466,12 @@ canvas.addEventListener('click', (e) => {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
         }
+    if (phase2Started &&
+        e.clientX >= btnX - 120 && e.clientX <= btnX - 10 &&
+        e.clientY >= btnY + 34  && e.clientY <= btnY + 58) {
+        showShop = true;
+        return;
+    }
     if (glovesUnlocked && !glovesActive && glovesRemaining > 0 &&
         e.offsetX >= btnX && e.offsetX <= btnX + 160 &&
         e.offsetY >= btnY + 58 && e.offsetY <= btnY + 88) {
@@ -403,6 +480,21 @@ canvas.addEventListener('click', (e) => {
             glovesRemaining--;
             return;
         }
+    if (glovesUnlocked && antibioticSprays > 0 &&
+        e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
+        e.offsetY >= btnY + 96 && e.offsetY <= btnY + 126) {
+        germs = [];
+        antibioticSprays--;
+        return;
+    }
+    if (glovesUnlocked && !hormoneActive && hormoneDrops > 0 &&
+        e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
+        e.offsetY >= btnY + 134 && e.offsetY <= btnY + 164) {
+        hormoneActive = true;
+        hormoneTimer  = 120;
+        hormoneDrops--;
+        return;
+    }
     if (isShowingIntro() || isShowingMatingSuccess() || isShowingGoalCards()) { 
         handleTutorialClick(e, ctx); 
         return; 
@@ -529,6 +621,9 @@ function gameLoop(timestamp){
     } else if (showPhase2Win) {
         embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
         drawPhase2Win(ctx, canvas, phase2WinCard);
+    } else if (showShop) {
+        embers.forEach(ember => ember.draw(ctx, ember === selectedEmber));
+        drawShopPopup(ctx, canvas, researchPoints, microscopeUnlocked);
     } else {
         embers = embers.filter(ember => ember.immortal || (ember.age < ember.lifespan && !(ember.squishTimer > 0 && ember.squishTimer <= 0.05)));
         if (selectedEmber && !embers.includes(selectedEmber) && !vialContents.includes(selectedEmber)) {
@@ -636,7 +731,7 @@ function gameLoop(timestamp){
         }
         const female = ember.matingWith;
         female.matingWith = null;
-        female.matingCooldown = female.radius * 0.85;
+        female.matingCooldown = female.radius * 0.85 * (hormoneActive ? 0.25 : 1);
         ember.matingWith = null;
         ember.matingTimer = 0;
         ember.matingCooldown = ember.radius * 0.15;
@@ -655,6 +750,13 @@ if (glovesActive) {
     if (glovesTimer <= 0) {
         glovesActive = false;
         glovesTimer = 0;
+    }
+}
+if (hormoneActive) {
+    hormoneTimer -= dt;
+    if (hormoneTimer <= 0) {
+        hormoneActive = false;
+        hormoneTimer  = 0;
     }
 }
 
@@ -711,6 +813,9 @@ toKill.forEach(ember => { ember.age = ember.lifespan + 1; });
 
 //--- Draw viruses on top ---
 viruses.forEach(virus => virus.draw(ctx));
+
+//--- Microscope overlay ---
+if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
 
 //--- Population state ---
     const alleleCounts = {};
@@ -771,7 +876,8 @@ viruses.forEach(virus => virus.draw(ctx));
             canShip = activeOrder !== null && vialContents.length === totalNeeded && checkFulfilled(activeOrder, vialContents);
             drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, false);
             drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
-            drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints);
+            drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints, antibioticSprays, hormoneDrops, hormoneActive, hormoneTimer);
+            if (phase2Started) { drawShopButton(ctx, canvas); }
             if (phase2Started) { drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCooldown, orderPending, researchPoints); }
         }
     }

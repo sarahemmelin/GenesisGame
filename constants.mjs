@@ -48,3 +48,10 @@ export const TUTORIAL_STEP = Object.freeze({
     FIND_AND_MATE: 'find_and_mate',
     GROW: 'grow'
 });
+
+export const SHOP_ITEMS = Object.freeze([
+    { id: 'antibiotic_spray', label: 'Antibiotic spray', desc: 'Instantly clears all germs.',              cost: 75   },
+    { id: 'gloves_refill',    label: 'Gloves refill',    desc: '+3 glove uses.',                           cost: 150  },
+    { id: 'hormonal_drops',   label: 'Hormonal drops',   desc: 'Halves mating cooldown for 30s.',          cost: 200  },
+    { id: 'microscope',       label: 'Microscope',       desc: 'Allele overlay on all embers. Permanent.', cost: 1200 },
+]);
