@@ -123,8 +123,8 @@ let showEmptyConfirm = false;
 //--- Orders ---
 let orders = [];
 let activeOrderIndex = 0;
-let requestCooldown = 0;
-let orderPending = false;
+let pendingSlots  = [false, false, false];
+let slotCooldowns = [0, 0, 0];
 let researchPoints = 0;
 let canShip = false;
 
@@ -170,16 +170,19 @@ canvas.addEventListener('mousemove', (e) => {
 
     let hoveringOrdersPanel = false;
     if (phase2Started) {
-        const opx  = canvas.width - 230;
-        const tabY = 248 + 28;
-        const tabH = Math.round(26 * getUIScale(canvas));
-        const tabW = 68;
-        const tabsEnd = opx + 6 + orders.length * (tabW + 3);
-        hoveringOrdersPanel =
-            mouseY >= tabY && mouseY <= tabY + tabH && (
-                mouseX >= opx + 6 && mouseX <= tabsEnd ||
-                (orders.length < 3 && mouseX >= tabsEnd && mouseX <= tabsEnd + 50)
-            );
+        const opx      = canvas.width - 230;
+        const opw      = 220;
+        const tabY     = 248 + 28;
+        const tabH     = Math.round(26 * getUIScale(canvas));
+        const tabW     = 68;
+        const contentY = tabY + tabH + 18;
+        const allTabsEnd = opx + 6 + 3 * (tabW + 3);
+        const overTabs   = mouseY >= tabY && mouseY <= tabY + tabH &&
+                           mouseX >= opx + 6 && mouseX <= allTabsEnd;
+        const overX      = orders[activeOrderIndex] != null &&
+                           mouseX >= opx + opw - 28 && mouseX <= opx + opw - 4 &&
+                           mouseY >= contentY - 16  && mouseY <= contentY + 4;
+        hoveringOrdersPanel = overTabs || overX;
     }
 
     const pcx = canvas.width / 2;
@@ -232,7 +235,7 @@ canvas.addEventListener('mousemove', (e) => {
         } else {
             const overEmpty = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY1 - 16 && mouseY <= vBtnY1 + 8;
             const overShip  = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY2 - 16 && mouseY <= vBtnY2 + 8;
-            hoveringVialButton = (overEmpty && vialContents.length > 0) || (overShip && canShip);
+            hoveringVialButton = overEmpty || overShip;
         }
         const vialEmberR = getVialEmberR(canvas, vialCapacity);
         const vialBottom = vvy + vvh - vialEmberR - 6;
@@ -589,30 +592,26 @@ canvas.addEventListener('click', (e) => {
         const tabY = py + 28;
         const tabH = Math.round(26 * getUIScale(canvas));
         const tabW = 68;
+        const pw       = 220;
+        const contentY = tabY + tabH + 18;
         let   dismissed = false;
-        orders.forEach((order, i) => {
-            if (dismissed) { return; }
-            const tx = px + 6 + i * (tabW + 3);
-            if (e.clientX >= tx + tabW - 16 && e.clientX <= tx + tabW &&
-                e.clientY >= tabY && e.clientY <= tabY + tabH) {
+        for (let i = 0; i < 3; i++) {
+            if (dismissed) { break; }
+            const tx    = px + 6 + i * (tabW + 3);
+            const order = orders[i] ?? null;
+            if (order && i === activeOrderIndex &&
+                e.clientX >= px + pw - 28 && e.clientX <= px + pw - 4 &&
+                e.clientY >= contentY - 16 && e.clientY <= contentY + 4) {
                 orders.splice(i, 1);
                 activeOrderIndex = Math.max(0, Math.min(activeOrderIndex, orders.length - 1));
                 dismissed = true;
-                return;
-            }
-            if (e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
+            } else if (order && e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
                 activeOrderIndex = i;
                 order.seen = true;
-            }
-        });
-        if (!dismissed) {
-            const reqTx = px + 6 + orders.length * (tabW + 3);
-            const reqW  = 50;
-            if (orders.length < 3 && !orderPending &&
-                e.clientX >= reqTx && e.clientX <= reqTx + reqW &&
-                e.clientY >= tabY  && e.clientY <= tabY + tabH) {
-                orderPending    = true;
-                requestCooldown = 15;
+            } else if (!order && !pendingSlots[i] &&
+                e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
+                pendingSlots[i]  = true;
+                slotCooldowns[i] = 15;
             }
         }
     }
@@ -891,13 +890,14 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
             if (activeOrderIndex >= orders.length) {
                 activeOrderIndex = Math.max(0, orders.length - 1);
             }
-            if (requestCooldown > 0) {
-                requestCooldown -= dt;
-                if (requestCooldown <= 0 && orderPending) {
-                    orders.push(generateOrder());
-                    activeOrderIndex = orders.length - 1;
-                    orderPending     = false;
-                    requestCooldown  = 0;
+            for (let i = 0; i < 3; i++) {
+                if (pendingSlots[i]) {
+                    slotCooldowns[i] -= dt;
+                    if (slotCooldowns[i] <= 0) {
+                        orders.push(generateOrder());
+                        pendingSlots[i]  = false;
+                        slotCooldowns[i] = 0;
+                    }
                 }
             }
 
@@ -909,7 +909,7 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
             drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
             drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints, antibioticSprays, hormoneDrops, hormoneActive, hormoneTimer);
             if (phase2Started) { drawShopButton(ctx, canvas); }
-            if (phase2Started) { drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCooldown, orderPending, researchPoints); }
+            if (phase2Started) { drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, pendingSlots, slotCooldowns, researchPoints); }
         }
     }
 

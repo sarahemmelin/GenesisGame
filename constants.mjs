@@ -42,6 +42,10 @@ export const UI_COLORS = Object.freeze({
     TAB_ACTIVE:    'rgba(255,255,255,0.15)',
     TAB_INACTIVE:  'rgba(255,255,255,0.05)',
     GLOVES:        '#5b9bd5',
+    PARCH_BG:      'rgba(238,232,213,0.92)',
+    PARCH_DIM:     'rgba(200,193,175,0.75)',
+    PARCH_TEXT:    '#222',
+    PARCH_MUTED:   '#666',
 });
 
 export const TUTORIAL_STEP = Object.freeze({

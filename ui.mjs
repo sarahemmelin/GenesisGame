@@ -202,13 +202,13 @@ export function initLabelCache(playerInitials, playerMedium, playerSource) {
     _labelCache = new OffscreenCanvas(w, h);
     const gc = _labelCache.getContext('2d');
 
-    gc.fillStyle = 'rgba(238, 232, 213, 0.92)';
+    gc.fillStyle = UI_COLORS.PARCH_BG;
     gc.fillRect(0, 0, w, h);
     gc.strokeStyle = 'rgba(0,0,0,0.25)';
     gc.lineWidth = 1;
     gc.strokeRect(0, 0, w, h);
 
-    gc.fillStyle = '#222';
+    gc.fillStyle = UI_COLORS.PARCH_TEXT;
     gc.textAlign = 'left';
     gc.textBaseline = 'top';
     gc.font = 'bold 12px monospace';
@@ -238,7 +238,7 @@ export function drawSkipButton(ctx, canvas) {
 //=== Panels ===
 
 //--- Orders ---
-export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCooldown, orderPending, researchPoints) {
+export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, pendingSlots, slotCooldowns, researchPoints) {
     const s    = getUIScale(canvas);
     const fbase = Math.max(9, Math.round(UI_FONT.BASE * s));
     const fsm   = Math.max(9, Math.round(UI_FONT.SM   * s));
@@ -267,89 +267,98 @@ export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCo
     const tabW = 68;
     let   tx   = px + 6;
 
-    orders.forEach((order, i) => {
-        const isActive   = i === activeOrderIndex;
-        const isExpiring = order.expiresIn < 120;
+    // --- Layout constants ---
+    const BORDER_R    = 4;   // dark strip visible on right edge
+    const CONTENT_PAD = 8;   // text inset from left of content rect
+    const lineH       = Math.round(20 * s);
+    const contentY    = tabY + tabH + 18;
+    const activeOrder  = orders[activeOrderIndex] ?? null;
+    const contentRectX = px + 6;
+    const contentRectW = pw - 6 - BORDER_R;
+    const contentRectH = ph - 53 - tabH;
 
-        ctx.fillStyle = isActive ? UI_COLORS.TAB_ACTIVE : UI_COLORS.TAB_INACTIVE;
-        ctx.fillRect(tx, tabY, tabW, tabH);
+    ctx.fillStyle = activeOrder ? UI_COLORS.PARCH_BG : UI_COLORS.PARCH_DIM;
+    ctx.fillRect(contentRectX, tabY + tabH, contentRectW, contentRectH);
 
-        const pheno = order.criteria[0].phenotype;
-        if (pheno && pheno !== 'albino' && BASE_COLORS[pheno]) {
-            const rgb     = BASE_COLORS[pheno];
-            ctx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+    for (let i = 0; i < 3; i++) {
+        const order    = orders[i] ?? null;
+        const isActive = i === activeOrderIndex;
+
+        if (order) {
+            const isExpiring = order.expiresIn < 120;
+            ctx.fillStyle = isActive ? UI_COLORS.PARCH_BG : UI_COLORS.PARCH_DIM;
+            ctx.fillRect(tx, tabY, tabW, tabH);
+
+            const pheno = order.criteria[0].phenotype;
+            ctx.fillStyle = (pheno && pheno !== 'albino' && BASE_COLORS[pheno])
+                ? `rgb(${BASE_COLORS[pheno].r},${BASE_COLORS[pheno].g},${BASE_COLORS[pheno].b})`
+                : UI_COLORS.PARCH_MUTED;
+            ctx.beginPath();
+            ctx.arc(tx + 10, tabY + tabH / 2, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.font      = `${fsm}px monospace`;
+            ctx.fillStyle = isExpiring ? UI_COLORS.DANGER : (isActive ? UI_COLORS.PARCH_TEXT : UI_COLORS.PARCH_MUTED);
+            ctx.fillText(order.seen ? 'Order' : '! Order', tx + 18, tabY + Math.round(tabH * 0.65));
+
         } else {
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = UI_COLORS.PARCH_DIM;
+            ctx.fillRect(tx, tabY, tabW, tabH);
+            ctx.font      = `${fsm}px monospace`;
+            if (pendingSlots[i]) {
+                const mins = Math.floor(slotCooldowns[i] / 60);
+                const secs = Math.floor(slotCooldowns[i] % 60);
+                ctx.fillStyle = UI_COLORS.PARCH_TEXT;
+                ctx.fillText(`[${mins}:${String(secs).padStart(2, '0')}]`, tx + 4, tabY + Math.round(tabH * 0.65));
+            } else {
+                ctx.fillStyle = UI_COLORS.PARCH_TEXT;
+                ctx.fillText('[ + ]', tx + 6, tabY + Math.round(tabH * 0.65));
+            }
         }
-        ctx.beginPath();
-        ctx.arc(tx + 10, tabY + tabH / 2, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.font      = `${fsm}px monospace`;
-        ctx.fillStyle = isExpiring ? UI_COLORS.DANGER : (isActive ? 'white' : UI_COLORS.TEXT_MUTED);
-        ctx.fillText(order.seen ? 'Order' : '! Order', tx + 18, tabY + Math.round(tabH * 0.65));
-
-        ctx.font      = '10px monospace';
-        ctx.fillStyle = 'rgba(255,255,255,0.3)';
-        ctx.textAlign = 'right';
-        ctx.fillText('×', tx + tabW - 4, tabY + 11);
-        ctx.textAlign = 'left';
 
         tx += tabW + 3;
-    });
-
-    // Request button
-    if (orders.length < 3) {
-        const reqW = 50;
-        ctx.fillStyle = UI_COLORS.TAB_INACTIVE;
-        ctx.fillRect(tx, tabY, reqW, tabH);
-        ctx.font = `${fsm}px monospace`;
-        if (orderPending) {
-            const mins = Math.floor(requestCooldown / 60);
-            const secs = Math.floor(requestCooldown % 60);
-            ctx.fillStyle = UI_COLORS.TEXT_MUTED;
-            ctx.fillText(`[${mins}:${String(secs).padStart(2, '0')}]`, tx + 4, tabY + Math.round(tabH * 0.65));
-        } else {
-            ctx.fillStyle = UI_COLORS.TEXT_DIM;
-            ctx.fillText('[ + ]', tx + 6, tabY + Math.round(tabH * 0.65));
-        }
     }
 
     // Active order content
-    const lineH    = Math.round(20 * s);
-    const contentY = tabY + tabH + 10;
-    if (activeOrderIndex !== null && orders[activeOrderIndex]) {
-        const order = orders[activeOrderIndex];
+    if (activeOrder) {
+        const textX = contentRectX + CONTENT_PAD;
         let   lineY = contentY;
 
+        ctx.font      = `${fsm}px monospace`;
+        //ctx.fillStyle = 'rgba(0,0,0,0.35)';
+        ctx.fillStyle = UI_COLORS.PARCH_TEXT;
+        ctx.textAlign = 'right';
+        ctx.fillText('[ x ]', px + pw - BORDER_R - 6, contentY);
+        ctx.textAlign = 'left';
+
         ctx.font = `${fbase}px monospace`;
-        order.criteria.forEach(line => {
+        activeOrder.criteria.forEach(line => {
             const genderStr = line.gender ? `${line.gender} ` : '';
             const phenoStr  = line.phenotype ?? 'any';
-            ctx.fillStyle   = 'white';
-            ctx.fillText(`• ${line.count}× ${genderStr}${phenoStr}`, px + 10, lineY);
+            ctx.fillStyle   = UI_COLORS.PARCH_TEXT;
+            ctx.fillText(`• ${line.count}× ${genderStr}${phenoStr}`, textX, lineY);
             lineY += lineH;
         });
 
         ctx.font      = `${fsm}px monospace`;
-        ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+        ctx.fillStyle = UI_COLORS.PARCH_TEXT;
         ctx.fillText('collect in vial', px + 10, lineY + 4);
 
-        const mins    = Math.floor(order.expiresIn / 60);
-        const secs    = Math.floor(order.expiresIn % 60);
-        ctx.fillStyle = order.expiresIn < 120 ? UI_COLORS.DANGER : UI_COLORS.TEXT_DIM;
+        const mins    = Math.floor(activeOrder.expiresIn / 60);
+        const secs    = Math.floor(activeOrder.expiresIn % 60);
+        ctx.fillStyle = activeOrder.expiresIn < 120 ? UI_COLORS.DANGER : UI_COLORS.PARCH_TEXT;
         ctx.fillText(`expires: ${mins}:${String(secs).padStart(2, '0')}`, px + 10, lineY + lineH);
         ctx.fillStyle = UI_COLORS.ACCENT;
-        ctx.fillText(`reward: ${order.reward} reputation`, px + 10, lineY + lineH * 2);
+        ctx.fillText(`reward: ${activeOrder.reward} reputation`, px + 10, lineY + lineH * 2);
 
     } else if (orders.length === 0) {
         ctx.font      = `${fbase}px monospace`;
-        ctx.fillStyle = UI_COLORS.TEXT_MUTED;
-        if (orderPending) {
-            ctx.fillText('Pending order incoming...', px + 10, contentY);
+        ctx.fillStyle = UI_COLORS.PARCH_TEXT;
+        if (pendingSlots.some(p => p)) {
+            ctx.fillText('Pending order incoming...', contentRectX + CONTENT_PAD, contentY);
         } else {
-            ctx.fillText('No active orders.', px + 10, contentY);
-            ctx.fillText('Click [ + ] to request.', px + 10, contentY + lineH);
+            ctx.fillText('No active orders.', contentRectX + CONTENT_PAD, contentY);
+            ctx.fillText('Click [ + ] to request.', contentRectX + CONTENT_PAD, contentY + lineH);
         }
     }
 }

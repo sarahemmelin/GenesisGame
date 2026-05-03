@@ -155,6 +155,9 @@ born (tiny) (not implemented)
 ---
 
 ## Campaign Structure
+NEW changes: 
+The Start Screen will have an input field where the teacher can say what the students should write. It can either be "Fixation", be
+
 
 The game is a sequence of rounds, each on a fresh dish, each with a distinct goal. Goals teach opposite relationships to the gene pool — the player must understand the system deeply to succeed at each one.
 
