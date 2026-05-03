@@ -8,14 +8,23 @@ let _labelCache = null;
 let _vialGlassCache = null;
 
 //=== Constants ===
-export const VIAL_WIDTH  = 54;
-export const VIAL_HEIGHT = 340;
+export const VIAL_WIDTH   = 54;
+const        VIAL_HEIGHT_MAX = 340;
+
+export function getVialHeight(canvas) {
+    return Math.min(VIAL_HEIGHT_MAX, canvas.height - getVialY(canvas) - 90);
+}
+
+export function getVialEmberR(canvas, vialCapacity) {
+    const available = getVialHeight(canvas) - 16;
+    return Math.min(12, Math.max(5, Math.floor((available - (vialCapacity - 1) * 4) / (vialCapacity * 2))));
+}
 
 //=== Vial ===
 export function initVialCache(canvas) {
     const pad = 10;
     const cw  = VIAL_WIDTH + pad * 2;
-    const ch  = VIAL_HEIGHT + pad * 2;
+    const ch  = getVialHeight(canvas) + pad * 2;
     _vialGlassCache = new OffscreenCanvas(cw, ch);
     const gc  = _vialGlassCache.getContext('2d');
 
@@ -62,17 +71,31 @@ export function getVialX(canvas) {
     return canvas.width - 230 + (230 - VIAL_WIDTH) / 2 - 10;
 }
 
-export function getVialY(canvas) {
-    return 480;
+export function getUIScale(canvas) {
+    return canvas.width < 1100 ? 0.85 : 1;
 }
 
-export function drawVialContents(ctx, canvas, vialContents) {
+export function getOrdersPanelHeight(canvas, criteriaCount) {
+    const s    = getUIScale(canvas);
+    const tabH = Math.round(26 * s);
+    const lineH = Math.round(20 * s);
+    const contentH = criteriaCount > 0
+        ? criteriaCount * lineH + lineH * 2
+        : lineH * 2;
+    return 28 + tabH + 10 + contentH + 20;
+}
+
+export function getVialY(canvas) {
+    return 248 + getOrdersPanelHeight(canvas, 2) + 47;
+}
+
+export function drawVialContents(ctx, canvas, vialContents, vialCapacity) {
     if (vialContents.length === 0) { return; }
 
     const vx     = getVialX(canvas);
     const vy     = getVialY(canvas);
-    const r      = 12;
-    const bottom = vy + VIAL_HEIGHT - r - 6;
+    const r      = getVialEmberR(canvas, vialCapacity);
+    const bottom = vy + getVialHeight(canvas) - r - 6;
 
     vialContents.forEach((ember, i) => {
         const ex = vx + VIAL_WIDTH / 2;
@@ -108,16 +131,20 @@ export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyCon
     const vy   = getVialY(canvas);
     const cx   = vx + VIAL_WIDTH / 2;
     const full = vialContents.length >= vialCapacity;
+    const s    = getUIScale(canvas);
+    const fsm  = Math.max(9, Math.round(UI_FONT.SM * s));
+    const fxs  = Math.max(9, Math.round(UI_FONT.XS * s));
 
     // Counter above vial
-    ctx.font = `${UI_FONT.SM}px monospace`;
+    ctx.font = `${fsm}px monospace`;
     ctx.textAlign = 'center';
     ctx.fillStyle = full ? UI_COLORS.DANGER : 'rgba(255,255,255,0.7)';
     ctx.fillText(`${vialContents.length} / ${vialCapacity}`, cx, vy - 10);
 
     // Buttons below vial
-    const btnY1 = vy + VIAL_HEIGHT + 22;
-    const btnY2 = vy + VIAL_HEIGHT + 52;
+    const vh    = getVialHeight(canvas);
+    const btnY1 = vy + vh + 22;
+    const btnY2 = vy + vh + 52;
     const btnW  = 110;
     const btnH  = 24;
     const btnX  = cx - btnW / 2;
@@ -126,7 +153,7 @@ export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyCon
     ctx.fillRect(btnX, btnY1 - 16, btnW, btnH);
     ctx.fillRect(btnX, btnY2 - 16, btnW, btnH);
 
-    ctx.font = `${UI_FONT.SM}px monospace`;
+    ctx.font = `${fsm}px monospace`;
     ctx.fillStyle = vialContents.length > 0 ? 'white' : UI_COLORS.TEXT_DISABLED;
     ctx.fillText('[ empty vial ]', cx, btnY1);
 
@@ -142,7 +169,7 @@ export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyCon
         ctx.strokeRect(btnX - 10, btnY1 - 50, btnW + 20, 90);
 
         ctx.fillStyle = 'white';
-        ctx.font = `${UI_FONT.XS}px monospace`;
+        ctx.font = `${fxs}px monospace`;
         ctx.fillText('Empty vial?', cx, btnY1 - 30);
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.fillText('Samples are lost.', cx, btnY1 - 14);
@@ -151,7 +178,7 @@ export function drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyCon
         ctx.fillRect(btnX, btnY1 + 2, 48, 20);
         ctx.fillRect(btnX + 62, btnY1 + 2, 48, 20);
 
-        ctx.font = `${UI_FONT.XS}px monospace`;
+        ctx.font = `${fxs}px monospace`;
         ctx.fillStyle = UI_COLORS.DANGER;
         ctx.fillText('[ yes ]', cx - 30, btnY1 + 16);
         ctx.fillStyle = 'white';
@@ -197,11 +224,12 @@ export function drawLabel(ctx) {
 }
 
 //=== Tutorial ===
-export function drawSkipButton(ctx) {
+export function drawSkipButton(ctx, canvas) {
+    const fsm = Math.max(9, Math.round(UI_FONT.SM * getUIScale(canvas)));
     ctx.shadowBlur = 0;
     ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.fillRect(20, 74, 130, 24);
-    ctx.font = `${UI_FONT.SM}px monospace`;
+    ctx.font = `${fsm}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.fillText('[ skip tutorial ]', 30, 90);
@@ -211,24 +239,32 @@ export function drawSkipButton(ctx) {
 
 //--- Orders ---
 export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCooldown, orderPending, researchPoints) {
+    const s    = getUIScale(canvas);
+    const fbase = Math.max(9, Math.round(UI_FONT.BASE * s));
+    const fsm   = Math.max(9, Math.round(UI_FONT.SM   * s));
+
     const px  = canvas.width - 230;
     const py  = 248;
     const pw  = 220;
+    const criteriaCount = (activeOrderIndex !== null && orders[activeOrderIndex])
+        ? orders[activeOrderIndex].criteria.length
+        : 0;
+    const ph  = getOrdersPanelHeight(canvas, criteriaCount);
 
     ctx.shadowBlur = 0;
     ctx.textAlign  = 'left';
 
     ctx.fillStyle = UI_COLORS.PANEL_BG;
-    ctx.fillRect(px, py, pw, 185);
+    ctx.fillRect(px, py, pw, ph);
 
-    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.font      = `${fsm}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT_DIM;
     ctx.fillText(`ORDERS · ${researchPoints} reputation`, px + 10, py + 18);
 
     // Tabs
     const tabY = py + 28;
-    const tabH = 26;
-    const tabW = 62;
+    const tabH = Math.round(26 * s);
+    const tabW = 68;
     let   tx   = px + 6;
 
     orders.forEach((order, i) => {
@@ -249,9 +285,9 @@ export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCo
         ctx.arc(tx + 10, tabY + tabH / 2, 4, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.font      = '13px monospace';
+        ctx.font      = `${fsm}px monospace`;
         ctx.fillStyle = isExpiring ? UI_COLORS.DANGER : (isActive ? 'white' : UI_COLORS.TEXT_MUTED);
-        ctx.fillText(order.seen ? 'Order' : '! Order', tx + 18, tabY + 17);
+        ctx.fillText(order.seen ? 'Order' : '! Order', tx + 18, tabY + Math.round(tabH * 0.65));
 
         tx += tabW + 3;
     });
@@ -261,66 +297,70 @@ export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, requestCo
         const reqW = 50;
         ctx.fillStyle = UI_COLORS.TAB_INACTIVE;
         ctx.fillRect(tx, tabY, reqW, tabH);
-        ctx.font = `${UI_FONT.SM}px monospace`;
+        ctx.font = `${fsm}px monospace`;
         if (orderPending) {
             const mins = Math.floor(requestCooldown / 60);
             const secs = Math.floor(requestCooldown % 60);
             ctx.fillStyle = UI_COLORS.TEXT_MUTED;
-            ctx.fillText(`[${mins}:${String(secs).padStart(2, '0')}]`, tx + 4, tabY + 17);
+            ctx.fillText(`[${mins}:${String(secs).padStart(2, '0')}]`, tx + 4, tabY + Math.round(tabH * 0.65));
         } else {
             ctx.fillStyle = UI_COLORS.TEXT_DIM;
-            ctx.fillText('[ + ]', tx + 6, tabY + 17);
+            ctx.fillText('[ + ]', tx + 6, tabY + Math.round(tabH * 0.65));
         }
     }
 
     // Active order content
-    const contentY = tabY + tabH + 12;
+    const lineH    = Math.round(20 * s);
+    const contentY = tabY + tabH + 10;
     if (activeOrderIndex !== null && orders[activeOrderIndex]) {
         const order = orders[activeOrderIndex];
         let   lineY = contentY;
 
-        ctx.font = `${UI_FONT.BASE}px monospace`;
+        ctx.font = `${fbase}px monospace`;
         order.criteria.forEach(line => {
             const genderStr = line.gender ? `${line.gender} ` : '';
             const phenoStr  = line.phenotype ?? 'any';
             ctx.fillStyle   = 'white';
             ctx.fillText(`• ${line.count}× ${genderStr}${phenoStr}`, px + 10, lineY);
-            lineY += 20;
+            lineY += lineH;
         });
 
-        ctx.font      = '12px monospace';
+        ctx.font      = `${fsm}px monospace`;
         ctx.fillStyle = UI_COLORS.TEXT_MUTED;
         ctx.fillText('collect in vial', px + 10, lineY + 4);
 
         const mins    = Math.floor(order.expiresIn / 60);
         const secs    = Math.floor(order.expiresIn % 60);
         ctx.fillStyle = order.expiresIn < 120 ? UI_COLORS.DANGER : UI_COLORS.TEXT_DIM;
-        ctx.fillText(`expires: ${mins}:${String(secs).padStart(2, '0')}`, px + 10, lineY + 20);
+        ctx.fillText(`expires: ${mins}:${String(secs).padStart(2, '0')}`, px + 10, lineY + lineH);
         ctx.fillStyle = UI_COLORS.ACCENT;
-        ctx.fillText(`reward: ${order.reward} reputation`, px + 10, lineY + 36);
+        ctx.fillText(`reward: ${order.reward} reputation`, px + 10, lineY + lineH * 2);
 
     } else if (orders.length === 0) {
-        ctx.font      = '14px monospace';
+        ctx.font      = `${fbase}px monospace`;
         ctx.fillStyle = UI_COLORS.TEXT_MUTED;
         if (orderPending) {
             ctx.fillText('Pending order incoming...', px + 10, contentY);
         } else {
             ctx.fillText('No active orders.', px + 10, contentY);
-            ctx.fillText('Click [ + ] to request.', px + 10, contentY + 20);
+            ctx.fillText('Click [ + ] to request.', px + 10, contentY + lineH);
         }
     }
 }
 
 //--- Population ---
 export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount) {
+    const s         = getUIScale(canvas);
+    const fbase     = Math.max(9, Math.round(UI_FONT.BASE * s));
     const colorKeys = Object.keys(BASE_COLORS);
     const alleleKey = colorKeys.map(c => alleleCounts[c] || 0).join(',');
-    const key = `${embers.length}|${alleleKey}|${avgFlicker.toFixed(2)}|${avgSize.toFixed(1)}|${maleCount}`;
+    const key = `${embers.length}|${alleleKey}|${avgFlicker.toFixed(2)}|${avgSize.toFixed(1)}|${maleCount}|${s}`;
 
     if (key !== _populationPanelKey) {
         _populationPanelKey = key;
-        const panelWidth = 220;
-        const panelHeight = 150 + colorKeys.length * 20;
+        const lh         = Math.round(20 * s);
+        const panelWidth  = 220;
+        const panelHeight = Math.round((150 + colorKeys.length * 20) * s);
         _populationPanelCache = new OffscreenCanvas(panelWidth, panelHeight);
         const gc = _populationPanelCache.getContext('2d');
 
@@ -328,22 +368,23 @@ export function drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicke
         gc.fillRect(0, 0, panelWidth, panelHeight);
 
         gc.fillStyle = 'white';
-        gc.font = `${UI_FONT.BASE}px monospace`;
+        gc.font = `${fbase}px monospace`;
         gc.textAlign = 'left';
-        gc.fillText(`Population: ${embers.length}`, 10, 20);
-        gc.fillText('Allele pool:', 10, 40);
+        gc.fillText(`Population: ${embers.length}`, 10, lh);
+        gc.fillText('Allele pool:', 10, lh * 2);
 
         colorKeys.forEach((color, i) => {
             const count = alleleCounts[color];
             gc.fillStyle = count ? 'white' : 'red';
-            gc.fillText(count ? `${color}: ${count}` : `${color}: extinct`, 30, 60 + i * 20);
+            gc.fillText(count ? `${color}: ${count}` : `${color}: extinct`, 30, lh * 3 + i * lh);
         });
 
         gc.fillStyle = 'white';
-        gc.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, 10, 60 + colorKeys.length * 20 + 20);
-        gc.fillText(`Avg size: ${avgSize.toFixed(1)}`, 10, 60 + colorKeys.length * 20 + 40);
-        gc.fillText(`Males: ${maleCount}`, 10, 60 + colorKeys.length * 20 + 60);
-        gc.fillText(`Females: ${femaleCount}`, 10, 60 + colorKeys.length * 20 + 80);
+        const statsY = lh * 3 + colorKeys.length * lh;
+        gc.fillText(`Flicker avg: ${avgFlicker.toFixed(2)}`, 10, statsY + lh);
+        gc.fillText(`Avg size: ${avgSize.toFixed(1)}`,       10, statsY + lh * 2);
+        gc.fillText(`Males: ${maleCount}`,                   10, statsY + lh * 3);
+        gc.fillText(`Females: ${femaleCount}`,               10, statsY + lh * 4);
     }
 
     ctx.shadowBlur = 0;
@@ -355,19 +396,21 @@ export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUn
     if (!phase2Started) {
         return;
     }
-    const btnX = canvas.width - 370;
-    const btnY = 10;
+    const s     = getUIScale(canvas);
+    const fbase = Math.max(9, Math.round(UI_FONT.BASE * s));
+    const btnX  = canvas.width - 370;
+    const btnY  = 10;
 
     ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.fillRect(btnX - 120, btnY, 110, 30);
-    ctx.font = `${UI_FONT.BASE}px monospace`;
+    ctx.font = `${fbase}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillStyle = UI_COLORS.ACCENT;
     ctx.fillText(`${researchPoints} reputation`, btnX - 110, btnY + 20);
 
     ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.fillRect(btnX, btnY, 130, 50);
-    ctx.font = `${UI_FONT.BASE}px monospace`;
+    ctx.font = `${fbase}px monospace`;
     ctx.textAlign = 'left';
     ctx.fillStyle = squishMode ? UI_COLORS.TEXT_DISABLED : 'white';
     ctx.fillText('[ grab ]', btnX + 10, btnY + 20);
@@ -379,7 +422,7 @@ export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUn
     }
     ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.fillRect(btnX, btnY + 58, 130, 30);
-    ctx.font = `${UI_FONT.BASE}px monospace`;
+    ctx.font = `${fbase}px monospace`;
     ctx.textAlign = 'left';
     const glovesLabel = glovesActive
         ? `[ gloves ${Math.ceil(glovesTimer)}s ]`
@@ -394,8 +437,11 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
         return;
     }
 
-    const panelWidth = 200;
-    const panelHeight = 120;
+    const s          = getUIScale(canvas);
+    const fbase      = Math.max(9, Math.round(UI_FONT.BASE * s));
+    const lh         = Math.round(20 * s);
+    const panelWidth  = Math.round(200 * s);
+    const panelHeight = Math.round(120 * s);
     const offset = (selectedEmber.displayRadius ?? selectedEmber.radius) + 15;
 
     const placeOnRight = selectedEmber.x < canvas.width / 2;
@@ -413,15 +459,15 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
     ctx.fillStyle = UI_COLORS.PANEL_BG;
     ctx.shadowColor = `rgb(${Math.round(selectedEmber.r)}, ${Math.round(selectedEmber.g)}, ${Math.round(selectedEmber.b)})`;
     ctx.shadowBlur = 20;
-    ctx.fillRect(panelX, panelY, 200, 120);
+    ctx.fillRect(panelX, panelY, panelWidth, panelHeight);
     ctx.shadowBlur = 0;
     ctx.fillStyle = 'white';
-    ctx.font = `${UI_FONT.BASE}px monospace`;
+    ctx.font = `${fbase}px monospace`;
     ctx.textAlign = 'left';
-    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, panelX + 10, panelY + 20);
-    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + 40);
+    ctx.fillText(`Allele 1: ${selectedEmber.colorAlleles[0].value} (${selectedEmber.colorAlleles[0].strength.toFixed(2)})`, panelX + 10, panelY + lh);
+    ctx.fillText(`Allele 2: ${selectedEmber.colorAlleles[1].value} (${selectedEmber.colorAlleles[1].strength.toFixed(2)})`, panelX + 10, panelY + lh * 2);
     ctx.fillStyle = 'white';
-    ctx.fillText('Flicker: ', panelX + 10, panelY + 60);
+    ctx.fillText('Flicker: ', panelX + 10, panelY + lh * 3);
     let flickerX = panelX + 10 + ctx.measureText('Flicker: ').width;
     const channelDefs = [
         { key: 'r', label: 'R', color: 'rgb(255, 80, 80)' },
@@ -431,24 +477,24 @@ export function drawEmberInfoPanel(ctx, canvas, selectedEmber, draggedEmber, sho
     channelDefs.forEach(ch => {
         const isFlickered = ch.key === selectedEmber.flickeredChannel;
         ctx.fillStyle = isFlickered ? 'rgba(255,255,255,0.2)' : ch.color;
-        ctx.fillText(ch.label, flickerX, panelY + 60);
+        ctx.fillText(ch.label, flickerX, panelY + lh * 3);
         const w = ctx.measureText(ch.label).width;
         if (isFlickered) {
             ctx.strokeStyle = 'rgba(255,255,255,0.45)';
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.moveTo(flickerX, panelY + 55);
-            ctx.lineTo(flickerX + w, panelY + 55);
+            ctx.moveTo(flickerX, panelY + lh * 3 - 5);
+            ctx.lineTo(flickerX + w, panelY + lh * 3 - 5);
             ctx.stroke();
         }
         flickerX += ctx.measureText(ch.label + ' ').width;
     });
     ctx.fillStyle = 'white';
-    ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + 80);
+    ctx.fillText(`Gender: ${selectedEmber.gender}`, panelX + 10, panelY + lh * 4);
     const cooldownText = selectedEmber.matingCooldown > 0
         ? `Ready in: ${Math.ceil(selectedEmber.matingCooldown)}s`
         : selectedEmber.age < 10 ? 'Too young' : 'Ready';
-    ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + 100);
+    ctx.fillText(`Mate: ${cooldownText}`, panelX + 10, panelY + lh * 5);
 }
 
 //=== Popups ===
