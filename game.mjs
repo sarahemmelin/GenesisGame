@@ -909,7 +909,7 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
             drawPopulationPanel(ctx, canvas, embers, alleleCounts, avgFlicker, avgSize, maleCount, femaleCount);
             drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUnlocked, glovesActive, glovesRemaining, glovesTimer, researchPoints, antibioticSprays, hormoneDrops, hormoneActive, hormoneTimer);
             if (phase2Started) { drawShopButton(ctx, canvas); }
-            if (phase2Started) { drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, pendingSlots, slotCooldowns, researchPoints); }
+            if (phase2Started && currentGameState !== GAME_STATE.TUTORIAL) { drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, pendingSlots, slotCooldowns, researchPoints); }
         }
     }
 
