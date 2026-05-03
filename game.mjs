@@ -6,7 +6,7 @@ import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -128,6 +128,10 @@ let orderPending = false;
 let researchPoints = 0;
 let canShip = false;
 
+//--- Playback ---
+let paused      = false;
+let fastForward = false;
+
 //--- Shop ---
 let showShop           = false;
 let microscopeUnlocked = false;
@@ -177,6 +181,11 @@ canvas.addEventListener('mousemove', (e) => {
                 (orders.length < 3 && mouseX >= tabsEnd && mouseX <= tabsEnd + 50)
             );
     }
+
+    const pcx = canvas.width / 2;
+    const hoveringCenter =
+        (mouseX >= pcx - 73 && mouseX <= pcx + 9  && mouseY >= 10 && mouseY <= 40) ||
+        (!paused && mouseX >= pcx + 15 && mouseX <= pcx + 73 && mouseY >= 10 && mouseY <= 40);
 
     let hoveringShopUI = false;
     if (phase2Started) {
@@ -247,7 +256,7 @@ canvas.addEventListener('mousemove', (e) => {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (draggedEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_PINCH_GLOVE : CURSOR_PINCH;
-    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton || hoveringOrdersPanel || hoveringShopUI) {
+    } else if (hoveringButton || hoveringArrow || hoveringSkip || hoveringVialButton || hoveringOrdersPanel || hoveringShopUI || hoveringCenter) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_GLOVE : CURSOR_POINT;
     } else if (hoveringEmber || hoveringVialEmber) {
         canvas.style.cursor = glovesActive ? CURSOR_REACH_GLOVE : CURSOR_REACH;
@@ -393,6 +402,16 @@ canvas.addEventListener('click', (e) => {
             e.clientY >= closeY && e.clientY <= closeY + 24) {
             showShop = false;
         }
+        return;
+    }
+
+    const pcx = canvas.width / 2;
+    if (e.clientX >= pcx - 73 && e.clientX <= pcx + 9 && e.clientY >= 10 && e.clientY <= 40) {
+        paused = !paused;
+        return;
+    }
+    if (!paused && e.clientX >= pcx + 15 && e.clientX <= pcx + 73 && e.clientY >= 10 && e.clientY <= 40) {
+        fastForward = !fastForward;
         return;
     }
 
@@ -583,7 +602,7 @@ canvas.addEventListener('click', (e) => {
             e.clientX >= reqTx && e.clientX <= reqTx + reqW &&
             e.clientY >= tabY  && e.clientY <= tabY + tabH) {
             orderPending    = true;
-            requestCooldown = 30;
+            requestCooldown = 15;
         }
     }
 
@@ -603,8 +622,9 @@ let lastTime = 0;
 
 //=== Game loop ===
 function gameLoop(timestamp){
-    const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+    const rawDt = Math.min((timestamp - lastTime) / 1000, 0.1);
     lastTime = timestamp;
+    const dt = paused ? 0 : (fastForward ? rawDt * 3 : rawDt);
     canShip = false;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -888,6 +908,7 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
         drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm, canShip);
     }
     drawLabel(ctx);
+    drawPauseForwardButtons(ctx, canvas, paused, fastForward);
     if (currentGameState === GAME_STATE.TUTORIAL) {
         drawSkipButton(ctx, canvas);
     }

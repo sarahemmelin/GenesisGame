@@ -452,6 +452,30 @@ export function drawModeButtons(ctx, canvas, phase2Started, squishMode, glovesUn
     }
 }
 
+//--- Pause / fast-forward ---
+export function drawPauseForwardButtons(ctx, canvas, paused, fastForward) {
+    const cx    = canvas.width / 2;
+    const btnY  = 10;
+    const s     = getUIScale(canvas);
+    const fbase = Math.max(9, Math.round(UI_FONT.BASE * s));
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(cx - 73, btnY, 82, 30);
+    ctx.font      = `${fbase}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = paused ? UI_COLORS.ACCENT : 'white';
+    ctx.fillText(paused ? '[ play ]' : '[ pause ]', cx - 32, btnY + 20);
+
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(cx + 15, btnY, 58, 30);
+    ctx.fillStyle = paused          ? UI_COLORS.TEXT_DISABLED
+                  : fastForward     ? UI_COLORS.ACCENT
+                  :                   'white';
+    ctx.fillText(fastForward ? '[ 1x ]' : '[ >> ]', cx + 44, btnY + 20);
+}
+
 //--- Shop ---
 export function drawShopButton(ctx, canvas) {
     const s     = getUIScale(canvas);
