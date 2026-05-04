@@ -113,8 +113,8 @@ class Ember {
         ];
 
         this.flickerAlleles = [
-            new Allele('baseFlicker', Math.random() * 0.01),
-            new Allele('baseFlicker', Math.random() * 0.01)
+            new Allele('baseFlicker', 0, 0),
+            new Allele('baseFlicker', 0, 0)
         ];
         }
 
