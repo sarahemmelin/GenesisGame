@@ -238,6 +238,30 @@ export function drawGoalIndicator(ctx, goalText) {
     ctx.restore();
 }
 
+export function drawTransitionPopup(ctx, canvas) {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    ctx.save();
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur   = 0;
+
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+    ctx.fillText('Tutorial complete.', cx, cy - 90);
+
+    ctx.font      = `${UI_FONT.BASE}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT;
+    ctx.fillText('You left the dish overnight.', cx, cy - 48);
+    ctx.fillText('When you returned, only a handful of embers remained.', cx, cy - 16);
+    ctx.fillText('These are now your founding population.', cx, cy + 16);
+
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT_MUTED;
+    ctx.fillText('click anywhere to continue', cx, cy + 80);
+    ctx.restore();
+}
+
 //=== Tutorial ===
 export function drawSkipButton(ctx, canvas) {
     const fsm = Math.max(9, Math.round(UI_FONT.SM * getUIScale(canvas)));

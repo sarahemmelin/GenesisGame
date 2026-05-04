@@ -6,7 +6,7 @@ import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance, hitTest } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel, drawTransitionPopup } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -112,6 +112,10 @@ let extinctColor = '';
 let showPhase2Win = false;
 let phase2WinSeen = false;
 let phase2WinCard = 0;
+let waitingForFirstOutbreakEnd = false;
+let showTransition = false;
+let transitionAlpha = 0;
+let transitionPhase = 'fadein';
 let squishMode = false;
 let clicksSinceLastGerm = 0;
 
@@ -276,6 +280,18 @@ canvas.addEventListener('mousemove', (e) => {
 canvas.addEventListener('mousedown', (e) => {
     if (paused) {
         paused = false;
+        return;
+    }
+    if (showTransition && transitionPhase === 'text') {
+        showTransition = false;
+        embers = [];
+        germs = [];
+        viruses = [];
+        selectedEmber = null;
+        draggedEmber = null;
+        vialContents = [];
+        spawnFoundingEmbers(10);
+        currentGoal = 'Keep them alive';
         return;
     }
     const btnX = canvas.width - 370;
@@ -573,6 +589,7 @@ canvas.addEventListener('click', (e) => {
             phase2WinCard = 0;
             phase2WinSeen = true;
             currentGameState = GAME_STATE.PLAYING;
+            waitingForFirstOutbreakEnd = true;
             triggerVirusOutbreak();
         }
         return;
@@ -810,6 +827,12 @@ if (currentGameState === GAME_STATE.PLAYING) {
 
 //--- Virus update (kill, spread) ---
 viruses = viruses.filter(v => embers.includes(v.host));
+if (waitingForFirstOutbreakEnd && viruses.length === 0 && embers.length > 0) {
+    waitingForFirstOutbreakEnd = false;
+    showTransition = true;
+    transitionAlpha = 0;
+    transitionPhase = 'fadein';
+}
 const toKill = [];
 viruses.forEach(virus => {
     if (virus.update(dt)) {
@@ -917,6 +940,17 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
     if (currentGameState === GAME_STATE.TUTORIAL) {
         drawSkipButton(ctx, canvas);
     }
+    if (showTransition) {
+        if (transitionPhase === 'fadein') {
+            transitionAlpha = Math.min(1, transitionAlpha + dt * 0.6);
+            if (transitionAlpha >= 1) { transitionPhase = 'text'; }
+        }
+        ctx.fillStyle = `rgba(0,0,0,${transitionAlpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (transitionPhase === 'text') {
+            drawTransitionPopup(ctx, canvas);
+        }
+    }
     requestAnimationFrame(gameLoop);
 }
 
@@ -949,6 +983,15 @@ function triggerVirusOutbreak() {
     viruses.push(new Virus(host, targetAllele));
 }
 
+function spawnFoundingEmbers(count) {
+    const margin = 80;
+    const maxX = canvas.width - 250;
+    for (let i = 0; i < count; i++) {
+        const x = margin + Math.random() * (maxX - margin);
+        const y = margin + Math.random() * (canvas.height - margin * 2);
+        embers.push(new Ember(x, y));
+    }
+}
 
 function skipTutorial() {
     completeTutorial();

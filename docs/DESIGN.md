@@ -24,12 +24,10 @@ COLLABORATION.md
 ---
 
 ## The Allele
-
-Each allele has three properties:
-
-- `gene` : which gene it belongs to (e.g. `'baseColor'`, `'saturation'`, `'glow'`)
-- `value` : what it expresses (e.g. `'crimson'`, `0.8`)
-- `strength` : how strongly it expresses (0.0 to 1.0)
+**Each allele has three properties:**
+- `gene`: which gene it belongs to (e.g., `'baseColor'`, `'saturation'`, `'glow'`)
+- `value`: what it expresses (e.g. `'crimson'`, `0.8`)
+- `strength`: how strongly it expresses (0.0 to 1.0)
 
 ### Strength at birth
 - Founding (no parents) → strength is fully random (0–1)
@@ -40,15 +38,14 @@ Each allele has three properties:
 - Constructor throws if `gene` is falsy or `value` is null/undefined
 
 ### TODO
-- Mutation trigger: if strength drops below 0.1, consider triggering a mutation (undecided)
-- Mode games (fixation, etc.) should use the Founding birth path — explicit alleles are tutorial-only
+- [ ] Mutation trigger: if strength drops below 0.1, consider triggering a mutation (undecided)
+- [ ] Mode games (fixation, etc.) should use the Founding birth path since explicit alleles are tutorial-only. 
 
 ---
 
 ## The Ember
-
 ### Genes (polygenic traits)
-Each ember is diploid — every gene has two alleles that blend by strength.
+Each ember is diploid, that means every gene has two alleles that blend by strength.
 
 | Gene | Values |
 |------|--------|
@@ -58,25 +55,25 @@ Each ember is diploid — every gene has two alleles that blend by strength.
 | `glow` | 0.0 – 1.0 |
 
 ### Flicker gene (epistasis)
-- `flickerAlleles` — two alleles, value is 0.0–1.0
-- Blended strength = probability of triggering at birth
+- `flickerAlleles` has two alleles, value is 0.0–1.0
+- Blended strength: probability of triggering at birth
 - If triggered: one random channel (`r`, `g`, or `b`) is zeroed out permanently
-- This is epistasis — the flicker gene suppresses expression of the color gene
-- Everyone carries it; founding embers get near-zero strength (very rare trigger)
+- This shows how epistasis, the flicker gene suppresses expression of the color gene
+- Everyone carries it, but founding embers get near-zero strength so it stays rare
 
 ### Size gene
 - Founding values: `'large'` and `'small'` only
-- `'medium'` is not a founding value — it emerges through blending across generations
+- `'medium'` is not a founding value but it emerges through blending across generations
 - Large ember → lives longer, longer mating cooldown
 - Small ember → lives shorter, shorter mating cooldown
 
 ### Birth paths
-- **Founding** — random color, random size, random strength on all alleles
-- **Born** — inherits one allele per gene from each parent, strength drifts ± 0.25
-- **Tutorial/explicit** — color fixed, size random, flicker suppressed to 0
+- **Founding**: random color, random size, random strength on all alleles
+- **Born**: inherits one allele per gene from each parent, strength drifts ± 0.25
+- **Tutorial/explicit**: color fixed, size random, flicker suppressed to 0
 
 ### TODO
-- Saturation and glow are resolved at birth but not yet used in `draw()` — visual effect undecided
+- [ ] Saturation and glow are resolved at birth but not yet used in `draw()`, visual effect is still undecided, might introduce it with the microscope? 
 
 ---
 
@@ -90,7 +87,7 @@ born (tiny)
 ```
 
 ### Mating
-- Only M + F pairs can mate; both must be mature with no active cooldown
+- Only M + F pairs can mate, and both must be mature with no active cooldown
 - Embers snap together for 10 seconds, then separate and spawn offspring
 - Offspring spawn from the midpoint between both parents
 
@@ -110,18 +107,18 @@ born (tiny)
 
 ## Architecture Principles
 
-- **Fail loudly** — missing required data should throw a visible error, not silently produce wrong values — because Christian says so
-- **Design for extension** — blending by strength means co-dominance and epistasis can be added later without refactoring
-- **One responsibility per file** — Allele knows about alleles, Ember knows about one ember, game.mjs knows about the world
+- **Fail loudly**: missing required data should throw a visible error, not silently produce wrong values (because Christian says so)
+- **Design for extension**: alleles blend by strength rather than using a simple "one allele wins" system. This means co-dominance (both alleles express at once, like blood type AB) and epistasis (one gene suppressing another, like the flicker gene already does) work without rewriting anything. 
+- **One responsibility per file**: Allele knows about alleles, Ember knows about one ember, game.mjs knows about the world. Good, plain, old JavaScript.
 
 ---
 
 ## TODO
-
 ### UI
-- [ ] Fullscreen mode (Esc to exit): call `requestFullscreen()`, listen for `fullscreenchange` event, then update `canvas.width` and `canvas.height` to `window.innerWidth/innerHeight`. UI panels reposition automatically since they calculate from canvas dimensions each frame. Embers near the right boundary will self-correct via the boundary check in `update()`. Esc is handled natively by the browser.
+- [ ] Fullscreen mode (Esc to exit): plan is to call `requestFullscreen()`, listen for `fullscreenchange` event, then update `canvas.width` and `canvas.height` to `window.innerWidth/innerHeight`. UI panels reposition automatically since they calculate from canvas dimensions each frame. Embers near the right boundary will self-correct via the boundary check in `update()`. Esc is handled natively by the browser.
 - [ ] Help/info menu reusing tutorial intro cards as reference for returning players
-- [ ] Bottleneck popup: if population drops to ~5 or fewer, popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
+- [ ] Bottleneck popup: if alleles go extinct, we have a popup showing: 
+The remaining population now define everyone."
 - [ ] Goal indicator on the left side of the screen showing the current goal (e.g. during tutorial: "Reach a population of 50 without any allele going extinct")
 
 ### Gameplay
@@ -139,7 +136,7 @@ The start screen has a keyword input field. Entering a keyword launches a specif
 
 ### All modes — shared structure
 1. Tutorial runs first (skippable)
-2. When the first virus outbreak ends (resolved or fully burned through), a transition popup appears: "Tutorial complete. You left the dish overnight, and came back to find... only 10 embers had survived. These are now your founding population. Your goal is to: [goal description]."
+2. When the first virus outbreak ends (resolved or fully burned through), a transition popup appears: "Tutorial complete. You left the dish overnight, and came back to find... only 10 embers had survived. These are now your founding population. Your goal is to: [goal description]." (dip to black, cinematic text)
 3. The tutorial population is cleared. ~10 new random embers spawn (Founding birth path — see The Allele). This demonstrates the founder effect.
 
 ### Open play
