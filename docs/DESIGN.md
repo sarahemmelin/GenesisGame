@@ -119,13 +119,10 @@ born (tiny)
 ## TODO
 
 ### UI
-- [ ] Fullscreen mode (Esc or X to exit) — needs design consideration for how canvas edges/panels behave at different resolutions
+- [ ] Fullscreen mode (Esc to exit): call `requestFullscreen()`, listen for `fullscreenchange` event, then update `canvas.width` and `canvas.height` to `window.innerWidth/innerHeight`. UI panels reposition automatically since they calculate from canvas dimensions each frame. Embers near the right boundary will self-correct via the boundary check in `update()`. Esc is handled natively by the browser.
 - [ ] Help/info menu reusing tutorial intro cards as reference for returning players
-- [ ] Fix: tutorial intro card — allele label dots/text shifted vertically
-- [ ] Fix: population panel background box too short, text overflows below it
-- [ ] Fix: mode buttons ([grab] [squish]) background sizing incorrect
-- [ ] Fix: gloves button background sizing incorrect
 - [ ] Bottleneck popup: if population drops to ~5 or fewer, popup follows: "Notice how the population changed? The survivors' genes — by chance — now define everyone."
+- [ ] Goal indicator on the left side of the screen showing the current goal (e.g. during tutorial: "Reach a population of 50 without any allele going extinct")
 
 ### Gameplay
 - [ ] Add mutation trigger when strength < 0.1 (unsure about this)
@@ -272,3 +269,6 @@ Viruses are a separate system of tiny, swarming dots, which targets specific all
 
 [x] Tutorial:
 The tutorial is a scripted scene which is separate from the real game. It spawns handcrafted embers with guaranteed allele coverage and suppressed flicker. The first part tasks the player to find and mate a specific pair, and the second part introduces aging, death, germs and viruses.
+
+[x] Pause behavior:
+Originally pausing froze the game but still allowed the player to drag embers around, which was an unintended way to cheat. It was fixed by intercepting mousedown while paused: any click anywhere on the canvas unpauses and does nothing else, so no ember can be picked up while the game is frozen.

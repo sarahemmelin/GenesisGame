@@ -5,7 +5,7 @@ import { CURSOR_OPEN, CURSOR_OPEN_GLOVE, CURSOR_REACH, CURSOR_REACH_GLOVE, CURSO
 import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.mjs";
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
-import { distance } from "./utilities.mjs";
+import { distance, hitTest } from "./utilities.mjs";
 import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
 
 
@@ -160,13 +160,13 @@ canvas.addEventListener('mousemove', (e) => {
     const btnX = canvas.width - 370;
     const btnY = 10;
     const hoveringButton = phase2Started && (
-        (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
-        (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88) ||
-        (glovesUnlocked && antibioticSprays > 0 && mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY + 96 && mouseY <= btnY + 126) ||
-        (glovesUnlocked && (hormoneDrops > 0 || hormoneActive) && mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY + 134 && mouseY <= btnY + 164)
+        hitTest(mouseX, mouseY, btnX, btnY, 130, 50) ||
+        (glovesUnlocked && hitTest(mouseX, mouseY, btnX, btnY + 58, 160, 30)) ||
+        (glovesUnlocked && antibioticSprays > 0 && hitTest(mouseX, mouseY, btnX, btnY + 96, 130, 30)) ||
+        (glovesUnlocked && (hormoneDrops > 0 || hormoneActive) && hitTest(mouseX, mouseY, btnX, btnY + 134, 130, 30))
     );
     const hoveringSkip = currentGameState === GAME_STATE.TUTORIAL &&
-        mouseX >= 20 && mouseX <= 150 && mouseY >= 74 && mouseY <= 98;
+        hitTest(mouseX, mouseY, 20, 74, 130, 24);
 
     let hoveringOrdersPanel = false;
     if (phase2Started) {
@@ -177,23 +177,21 @@ canvas.addEventListener('mousemove', (e) => {
         const tabW     = 68;
         const contentY = tabY + tabH + 18;
         const allTabsEnd = opx + 6 + 3 * (tabW + 3);
-        const overTabs   = mouseY >= tabY && mouseY <= tabY + tabH &&
-                           mouseX >= opx + 6 && mouseX <= allTabsEnd;
+        const overTabs   = hitTest(mouseX, mouseY, opx + 6, tabY, allTabsEnd - (opx + 6), tabH);
         const overX      = orders[activeOrderIndex] != null &&
-                           mouseX >= opx + opw - 50 && mouseX <= opx + opw - 10 &&
-                           mouseY >= contentY - 20  && mouseY <= contentY + 10;
+                           hitTest(mouseX, mouseY, opx + opw - 50, contentY - 20, 40, 30);
         hoveringOrdersPanel = overTabs || overX;
     }
 
     const pcx = canvas.width / 2;
     const hoveringCenter =
-        (mouseX >= pcx - 73 && mouseX <= pcx + 9  && mouseY >= 10 && mouseY <= 40) ||
-        (!paused && mouseX >= pcx + 15 && mouseX <= pcx + 73 && mouseY >= 10 && mouseY <= 40);
+        hitTest(mouseX, mouseY, pcx - 73, 10, 82, 30) ||
+        (!paused && hitTest(mouseX, mouseY, pcx + 15, 10, 58, 30));
 
     let hoveringShopUI = false;
     if (phase2Started) {
         const shopBtnX = canvas.width - 490;
-        if (mouseX >= shopBtnX && mouseX <= shopBtnX + 110 && mouseY >= 44 && mouseY <= 68) {
+        if (hitTest(mouseX, mouseY, shopBtnX, 44, 110, 24)) {
             hoveringShopUI = true;
         }
     }
@@ -206,14 +204,12 @@ canvas.addEventListener('mousemove', (e) => {
         SHOP_ITEMS.forEach((item, i) => {
             const iy      = spy + 66 + i * itemH;
             const isOwned = item.id === 'microscope' && microscopeUnlocked;
-            if (!isOwned && researchPoints >= item.cost &&
-                mouseX >= spx + 380 - 76 && mouseX <= spx + 380 - 16 &&
-                mouseY >= iy + 42 && mouseY <= iy + 62) {
+            if (!isOwned && hitTest(mouseX, mouseY, spx + 380 - 76, iy + 42, 60, 20)) {
                 hoveringShopUI = true;
             }
         });
         const closeY = spy + 66 + SHOP_ITEMS.length * itemH + 12;
-        if (mouseX >= scx - 44 && mouseX <= scx + 44 && mouseY >= closeY && mouseY <= closeY + 24) {
+        if (hitTest(mouseX, mouseY, scx - 44, closeY, 88, 24)) {
             hoveringShopUI = true;
         }
     }
@@ -229,12 +225,12 @@ canvas.addEventListener('mousemove', (e) => {
         const vBtnY1 = vvy + vvh + 22;
         const vBtnY2 = vvy + vvh + 52;
         if (showEmptyConfirm) {
-            hoveringVialButton = mouseY >= vBtnY1 + 2 && mouseY <= vBtnY1 + 22 &&
-                ((mouseX >= vvcx - 55 && mouseX <= vvcx - 7) ||
-                 (mouseX >= vvcx + 14 && mouseX <= vvcx + 62));
+            hoveringVialButton =
+                hitTest(mouseX, mouseY, vvcx - 55, vBtnY1 + 2, 48, 20) ||
+                hitTest(mouseX, mouseY, vvcx + 14, vBtnY1 + 2, 48, 20);
         } else {
-            const overEmpty = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY1 - 16 && mouseY <= vBtnY1 + 8;
-            const overShip  = mouseX >= vBtnX1 && mouseX <= vBtnX1 + 110 && mouseY >= vBtnY2 - 16 && mouseY <= vBtnY2 + 8;
+            const overEmpty = hitTest(mouseX, mouseY, vBtnX1, vBtnY1 - 16, 110, 24);
+            const overShip  = hitTest(mouseX, mouseY, vBtnX1, vBtnY2 - 16, 110, 24);
             hoveringVialButton = overEmpty || overShip;
         }
         const vialEmberR = getVialEmberR(canvas, vialCapacity);
@@ -277,11 +273,15 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 canvas.addEventListener('mousedown', (e) => {
+    if (paused) {
+        paused = false;
+        return;
+    }
     const btnX = canvas.width - 370;
     const btnY = 10;
     const overButton = phase2Started && (
-        (e.clientX >= btnX && e.clientX <= btnX + 130 && e.clientY >= btnY && e.clientY <= btnY + 50) ||
-        (glovesUnlocked && e.clientX >= btnX && e.clientX <= btnX + 160 && e.clientY >= btnY + 58 && e.clientY <= btnY + 88)
+        hitTest(e.clientX, e.clientY, btnX, btnY, 130, 50) ||
+        (glovesUnlocked && hitTest(e.clientX, e.clientY, btnX, btnY + 58, 160, 30))
     );
     if (squishMode || e.shiftKey || overButton) {
         canvas.style.cursor = glovesActive ? CURSOR_POINT_PRESS_GLOVE : CURSOR_POINT_PRESS;
@@ -331,8 +331,7 @@ document.addEventListener('keyup', (e) => {
 canvas.addEventListener('mouseup', (e) => {
     const vx = getVialX(canvas);
     const vy = getVialY(canvas);
-    const overVial = e.clientX >= vx && e.clientX <= vx + VIAL_WIDTH &&
-                     e.clientY >= vy && e.clientY <= vy + getVialHeight(canvas);
+    const overVial = hitTest(e.clientX, e.clientY, vx, vy, VIAL_WIDTH, getVialHeight(canvas));
 
     if (draggedEmber && overVial && vialContents.length < vialCapacity && currentGameState === GAME_STATE.PLAYING) {
         vialContents.push(draggedEmber);
@@ -351,8 +350,8 @@ canvas.addEventListener('mouseup', (e) => {
     const btnX = canvas.width - 370;
     const btnY = 10;
     const overButton = phase2Started && (
-        (mouseX >= btnX && mouseX <= btnX + 130 && mouseY >= btnY && mouseY <= btnY + 50) ||
-        (glovesUnlocked && mouseX >= btnX && mouseX <= btnX + 160 && mouseY >= btnY + 58 && mouseY <= btnY + 88)
+        hitTest(mouseX, mouseY, btnX, btnY, 130, 50) ||
+        (glovesUnlocked && hitTest(mouseX, mouseY, btnX, btnY + 58, 160, 30))
     );
     const overArrow =
         (showGermIntroPopup || showGlovesPopup || showPhase2Win || isShowingIntro() || isShowingGoalCards()) &&
@@ -386,8 +385,7 @@ canvas.addEventListener('click', (e) => {
             const isOwned   = item.id === 'microscope' && microscopeUnlocked;
             const canAfford = researchPoints >= item.cost;
             if (!isOwned && canAfford &&
-                e.clientX >= spx + 380 - 76 && e.clientX <= spx + 380 - 16 &&
-                e.clientY >= iy + 42 && e.clientY <= iy + 62) {
+                hitTest(e.clientX, e.clientY, spx + 380 - 76, iy + 42, 60, 20)) {
                 researchPoints -= item.cost;
                 if (item.id === 'antibiotic_spray') {
                     antibioticSprays++;
@@ -401,25 +399,24 @@ canvas.addEventListener('click', (e) => {
             }
         });
         const closeY = spy + 66 + SHOP_ITEMS.length * itemH + 12;
-        if (e.clientX >= scx - 44 && e.clientX <= scx + 44 &&
-            e.clientY >= closeY && e.clientY <= closeY + 24) {
+        if (hitTest(e.clientX, e.clientY, scx - 44, closeY, 88, 24)) {
             showShop = false;
         }
         return;
     }
 
     const pcx = canvas.width / 2;
-    if (e.clientX >= pcx - 73 && e.clientX <= pcx + 9 && e.clientY >= 10 && e.clientY <= 40) {
+    if (hitTest(e.clientX, e.clientY, pcx - 73, 10, 82, 30)) {
         paused = !paused;
         return;
     }
-    if (!paused && e.clientX >= pcx + 15 && e.clientX <= pcx + 73 && e.clientY >= 10 && e.clientY <= 40) {
+    if (!paused && hitTest(e.clientX, e.clientY, pcx + 15, 10, 58, 30)) {
         fastForward = !fastForward;
         return;
     }
 
     if (currentGameState === GAME_STATE.TUTORIAL &&
-        e.clientX >= 20 && e.clientX <= 150 && e.clientY >= 74 && e.clientY <= 98) {
+        hitTest(e.clientX, e.clientY, 20, 74, 130, 24)) {
         skipTutorial();
         return;
     }
@@ -437,12 +434,12 @@ canvas.addEventListener('click', (e) => {
         if (showEmptyConfirm) {
             const yesX = vcx - 55;
             const noX  = vcx + 14;
-            if (e.clientX >= yesX && e.clientX <= yesX + 48 && e.clientY >= btnY1 + 2 && e.clientY <= btnY1 + 22) {
+            if (hitTest(e.clientX, e.clientY, yesX, btnY1 + 2, 48, 20)) {
                 vialContents = [];
                 showEmptyConfirm = false;
                 return;
             }
-            if (e.clientX >= noX && e.clientX <= noX + 48 && e.clientY >= btnY1 + 2 && e.clientY <= btnY1 + 22) {
+            if (hitTest(e.clientX, e.clientY, noX, btnY1 + 2, 48, 20)) {
                 showEmptyConfirm = false;
                 return;
             }
@@ -450,11 +447,11 @@ canvas.addEventListener('click', (e) => {
             return;
         }
 
-        if (e.clientX >= btnX1 && e.clientX <= btnX1 + btnW && e.clientY >= btnY1 - 16 && e.clientY <= btnY1 + 8) {
+        if (hitTest(e.clientX, e.clientY, btnX1, btnY1 - 16, btnW, 24)) {
             if (vialContents.length > 0) { showEmptyConfirm = true; }
             return;
         }
-        if (e.clientX >= btnX1 && e.clientX <= btnX1 + btnW && e.clientY >= btnY2 - 16 && e.clientY <= btnY2 + 8) {
+        if (hitTest(e.clientX, e.clientY, btnX1, btnY2 - 16, btnW, 24)) {
             const activeOrder = orders[activeOrderIndex] ?? null;
             if (activeOrder) {
                 const totalNeeded = activeOrder.criteria.reduce((sum, line) => sum + line.count, 0);
@@ -483,35 +480,30 @@ canvas.addEventListener('click', (e) => {
 
     const btnX = canvas.width - 370;
     const btnY = 10;
-    if (phase2Started && e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
-        e.offsetY >= btnY && e.offsetY <= btnY + 50) {
+    if (phase2Started && hitTest(e.offsetX, e.offsetY, btnX, btnY, 130, 50)) {
             squishMode = e.offsetY < btnY + 30 ? false : true;
             return;
         }
     if (phase2Started &&
-        e.clientX >= btnX - 120 && e.clientX <= btnX - 10 &&
-        e.clientY >= btnY + 34  && e.clientY <= btnY + 58) {
+        hitTest(e.clientX, e.clientY, btnX - 120, btnY + 34, 110, 24)) {
         showShop = true;
         return;
     }
     if (glovesUnlocked && !glovesActive && glovesRemaining > 0 &&
-        e.offsetX >= btnX && e.offsetX <= btnX + 160 &&
-        e.offsetY >= btnY + 58 && e.offsetY <= btnY + 88) {
+        hitTest(e.offsetX, e.offsetY, btnX, btnY + 58, 160, 30)) {
             glovesActive = true;
             glovesTimer = 60;
             glovesRemaining--;
             return;
         }
     if (glovesUnlocked && antibioticSprays > 0 &&
-        e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
-        e.offsetY >= btnY + 96 && e.offsetY <= btnY + 126) {
+        hitTest(e.offsetX, e.offsetY, btnX, btnY + 96, 130, 30)) {
         germs = [];
         antibioticSprays--;
         return;
     }
     if (glovesUnlocked && !hormoneActive && hormoneDrops > 0 &&
-        e.offsetX >= btnX && e.offsetX <= btnX + 130 &&
-        e.offsetY >= btnY + 134 && e.offsetY <= btnY + 164) {
+        hitTest(e.offsetX, e.offsetY, btnX, btnY + 134, 130, 30)) {
         hormoneActive = true;
         hormoneTimer  = 120;
         hormoneDrops--;
@@ -600,16 +592,15 @@ canvas.addEventListener('click', (e) => {
             const tx    = px + 6 + i * (tabW + 3);
             const order = orders[i] ?? null;
             if (order && i === activeOrderIndex &&
-                e.clientX >= px + pw - 50 && e.clientX <= px + pw - 10 &&
-                e.clientY >= contentY - 20 && e.clientY <= contentY + 10) {
+                hitTest(e.clientX, e.clientY, px + pw - 50, contentY - 20, 40, 30)) {
                 orders.splice(i, 1);
                 activeOrderIndex = Math.max(0, Math.min(activeOrderIndex, orders.length - 1));
                 dismissed = true;
-            } else if (order && e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
+            } else if (order && hitTest(e.clientX, e.clientY, tx, tabY, tabW, tabH)) {
                 activeOrderIndex = i;
                 order.seen = true;
             } else if (!order && !pendingSlots[i] &&
-                e.clientX >= tx && e.clientX <= tx + tabW && e.clientY >= tabY && e.clientY <= tabY + tabH) {
+                hitTest(e.clientX, e.clientY, tx, tabY, tabW, tabH)) {
                 pendingSlots[i]  = true;
                 slotCooldowns[i] = 15;
             }
