@@ -246,17 +246,17 @@ export function drawTransitionPopup(ctx, canvas) {
     ctx.textBaseline = 'middle';
     ctx.shadowBlur   = 0;
 
-    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.font      = `${UI_FONT.XL}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT_MUTED;
     ctx.fillText('Tutorial complete.', cx, cy - 90);
 
-    ctx.font      = `${UI_FONT.BASE}px monospace`;
+    ctx.font      = `${UI_FONT.XXL}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT;
-    ctx.fillText('You left the dish overnight.', cx, cy - 48);
+    ctx.fillText('You left the petri dish overnight.', cx, cy - 48);
     ctx.fillText('When you returned, only a handful of embers remained.', cx, cy - 16);
     ctx.fillText('These are now your founding population.', cx, cy + 16);
 
-    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.font      = `${UI_FONT.XL}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT_MUTED;
     ctx.fillText('click anywhere to continue', cx, cy + 80);
     ctx.restore();
@@ -377,10 +377,11 @@ export function drawOrdersPanel(ctx, canvas, orders, activeOrderIndex, pendingSl
 
         ctx.font = `${fbase}px monospace`;
         activeOrder.criteria.forEach(line => {
-            const genderStr = line.gender ? `${line.gender} ` : '';
-            const phenoStr  = line.phenotype ?? 'any';
-            ctx.fillStyle   = UI_COLORS.PARCH_TEXT;
-            ctx.fillText(`• ${line.count}× ${genderStr}${phenoStr}`, textX, lineY);
+            const flickerStr = line.flicker ? 'flickered ' : '';
+            const genderStr  = line.gender ? `${line.gender} ` : '';
+            const phenoStr   = line.phenotype ?? 'any';
+            ctx.fillStyle    = UI_COLORS.PARCH_TEXT;
+            ctx.fillText(`• ${line.count}× ${flickerStr}${genderStr}${phenoStr}`, textX, lineY);
             lineY += lineH;
         });
 

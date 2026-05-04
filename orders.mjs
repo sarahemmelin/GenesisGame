@@ -17,7 +17,9 @@ function randomCriteriaLine() {
     else if (phenoRoll < 0.92) { phenotype = 'blue'; }
     else                       { phenotype = 'albino'; }
 
-    return { count, gender, phenotype };
+    const flicker = Math.random() < 0.12 ? true : null;
+
+    return { count, gender, phenotype, flicker };
 }
 
 function calculateReward(criteria) {
@@ -27,6 +29,7 @@ function calculateReward(criteria) {
         if (line.phenotype === 'albino') { points += 20; }
         else if (line.phenotype !== null) { points += 10; }
         if (line.gender !== null) { points += 5; }
+        if (line.flicker === true) { points += 15; }
         if (i > 0) { points += 15; }
     });
     return points;
@@ -63,8 +66,9 @@ export function checkFulfilled(order, vialContents) {
                     ? ember.colorAlleles[0].strength === 0 && ember.colorAlleles[1].strength === 0
                     : ember.colorAlleles.some(a => a.value === line.phenotype)
             );
-            const genderMatch = line.gender === null || ember.gender === line.gender;
-            return alleleMatch && genderMatch;
+            const genderMatch  = line.gender === null || ember.gender === line.gender;
+            const flickerMatch = line.flicker !== true || ember.flickeredChannel !== null;
+            return alleleMatch && genderMatch && flickerMatch;
         });
         return matches.length >= line.count;
     });

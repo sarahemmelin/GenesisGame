@@ -25,9 +25,12 @@ export const ROUND = Object.freeze({
 });
 
 export const UI_FONT = Object.freeze({
-    BASE: 14,
-    SM:   12,
-    XS:   11,
+    XXL:    20,
+    XL:     18,
+    LARGE:  16,
+    BASE:   14,
+    SM:     12,
+    XS:     11,
 });
 
 export const UI_COLORS = Object.freeze({
