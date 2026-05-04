@@ -1,4 +1,8 @@
 //--- Help functions ---
+export function hitTest(mx, my, x, y, w, h) {
+    return mx >= x && mx <= x + w && my >= y && my <= y + h;
+}
+
 export function distance(ax, ay, bx, by) {
     const dx = ax - bx;
     const dy = ay - by;
