@@ -1030,11 +1030,10 @@ function skipTutorial() {
     showExtinctPopup = false;
     extinctColor = '';
     selectedEmber = null;
-    currentGoal = 'Keep them alive';
     currentGameState = GAME_STATE.PLAYING;
-    watchingFirstOutbreak = true;
-    firstOutbreakPeaked = false;
-    triggerVirusOutbreak();
+    showTransition = true;
+    transitionAlpha = 0;
+    transitionPhase = 'fadein';
 }
 
 function restartPhase2() {
