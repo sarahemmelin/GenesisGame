@@ -112,7 +112,9 @@ let extinctColor = '';
 let showPhase2Win = false;
 let phase2WinSeen = false;
 let phase2WinCard = 0;
-let waitingForFirstOutbreakEnd = false;
+let watchingFirstOutbreak = false;
+let firstOutbreakPeaked = false;
+let transitionCountdown = -1;
 let showTransition = false;
 let transitionAlpha = 0;
 let transitionPhase = 'fadein';
@@ -589,7 +591,8 @@ canvas.addEventListener('click', (e) => {
             phase2WinCard = 0;
             phase2WinSeen = true;
             currentGameState = GAME_STATE.PLAYING;
-            waitingForFirstOutbreakEnd = true;
+            watchingFirstOutbreak = true;
+            firstOutbreakPeaked = false;
             triggerVirusOutbreak();
         }
         return;
@@ -827,11 +830,23 @@ if (currentGameState === GAME_STATE.PLAYING) {
 
 //--- Virus update (kill, spread) ---
 viruses = viruses.filter(v => embers.includes(v.host));
-if (waitingForFirstOutbreakEnd && viruses.length === 0 && embers.length > 0) {
-    waitingForFirstOutbreakEnd = false;
-    showTransition = true;
-    transitionAlpha = 0;
-    transitionPhase = 'fadein';
+if (watchingFirstOutbreak) {
+    if (!firstOutbreakPeaked && viruses.length > 0) {
+        firstOutbreakPeaked = true;
+    }
+    if (firstOutbreakPeaked && viruses.length === 0) {
+        watchingFirstOutbreak = false;
+        transitionCountdown = 10;
+    }
+}
+if (transitionCountdown > 0) {
+    transitionCountdown -= dt;
+    if (transitionCountdown <= 0) {
+        transitionCountdown = -1;
+        showTransition = true;
+        transitionAlpha = 0;
+        transitionPhase = 'fadein';
+    }
 }
 const toKill = [];
 viruses.forEach(virus => {
