@@ -180,8 +180,8 @@ canvas.addEventListener('mousemove', (e) => {
         const overTabs   = mouseY >= tabY && mouseY <= tabY + tabH &&
                            mouseX >= opx + 6 && mouseX <= allTabsEnd;
         const overX      = orders[activeOrderIndex] != null &&
-                           mouseX >= opx + opw - 28 && mouseX <= opx + opw - 4 &&
-                           mouseY >= contentY - 16  && mouseY <= contentY + 4;
+                           mouseX >= opx + opw - 50 && mouseX <= opx + opw - 10 &&
+                           mouseY >= contentY - 20  && mouseY <= contentY + 10;
         hoveringOrdersPanel = overTabs || overX;
     }
 
@@ -600,8 +600,8 @@ canvas.addEventListener('click', (e) => {
             const tx    = px + 6 + i * (tabW + 3);
             const order = orders[i] ?? null;
             if (order && i === activeOrderIndex &&
-                e.clientX >= px + pw - 28 && e.clientX <= px + pw - 4 &&
-                e.clientY >= contentY - 16 && e.clientY <= contentY + 4) {
+                e.clientX >= px + pw - 50 && e.clientX <= px + pw - 10 &&
+                e.clientY >= contentY - 20 && e.clientY <= contentY + 10) {
                 orders.splice(i, 1);
                 activeOrderIndex = Math.max(0, Math.min(activeOrderIndex, orders.length - 1));
                 dismissed = true;
