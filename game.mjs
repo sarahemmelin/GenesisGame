@@ -6,7 +6,7 @@ import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance, hitTest } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -121,6 +121,7 @@ let vialCapacity = 10;
 let showEmptyConfirm = false;
 
 //--- Orders ---
+let currentGoal = '';
 let orders = [];
 let activeOrderIndex = 0;
 let pendingSlots  = [false, false, false];
@@ -660,6 +661,7 @@ function gameLoop(timestamp){
 
         if (!phase2Started && getStep() === TUTORIAL_STEP.GROW && !isShowingGoalCards() && !isShowingMatingSuccess()) {
             phase2Started = true;
+            currentGoal = 'Grow to 50 without losing any allele';
             embers.forEach(ember => {
                 ember.immortal = false;
                 ember.age = 10;
@@ -910,6 +912,7 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
         drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm, canShip);
     }
     drawLabel(ctx);
+    drawGoalIndicator(ctx, currentGoal);
     drawPauseForwardButtons(ctx, canvas, paused, fastForward);
     if (currentGameState === GAME_STATE.TUTORIAL) {
         drawSkipButton(ctx, canvas);
@@ -964,6 +967,7 @@ function skipTutorial() {
     showExtinctPopup = false;
     extinctColor = '';
     selectedEmber = null;
+    currentGoal = 'Keep them alive';
     currentGameState = GAME_STATE.PLAYING;
 }
 
@@ -977,6 +981,7 @@ function restartPhase2() {
     germs = [];
     viruses = [];
     phase2Started = true;
+    currentGoal = 'Grow to 50 without losing any allele';
     showExtinctPopup = false;
     extinctColor = '';
     selectedEmber = null;
