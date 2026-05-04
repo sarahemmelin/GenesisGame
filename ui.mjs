@@ -223,6 +223,21 @@ export function drawLabel(ctx) {
     }
 }
 
+export function drawGoalIndicator(ctx, goalText) {
+    if (!goalText) { return; }
+    ctx.save();
+    ctx.shadowBlur   = 0;
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'top';
+    ctx.font         = `${UI_FONT.XS}px monospace`;
+    ctx.fillStyle    = UI_COLORS.TEXT_MUTED;
+    ctx.fillText('GOAL', 20, 110);
+    ctx.font         = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle    = UI_COLORS.TEXT;
+    ctx.fillText(goalText, 20, 124);
+    ctx.restore();
+}
+
 //=== Tutorial ===
 export function drawSkipButton(ctx, canvas) {
     const fsm = Math.max(9, Math.round(UI_FONT.SM * getUIScale(canvas)));
