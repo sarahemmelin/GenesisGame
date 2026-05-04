@@ -124,19 +124,18 @@ The remaining population now define everyone."
 ### Gameplay
 - [ ] Add mutation trigger when strength < 0.1 (unsure about this)
 - [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting (unsure about this)
-- [ ] Albinism: emerges naturally when both allele strengths drift to 0 — ember appears white. Consider detecting and reacting to this event (popup? highlight?)
-  - Note: **Melanism** (fully black ember) is theoretically possible but ultrarare — requires albinism *and* the flicker gene triggering on top of it, zeroing the last channel. Odds stack multiplicatively. May never occur in a normal playthrough.
+- [ ] Albinism: emerges naturally when both allele strengths drift to 0, the ember appears white. Consider detecting and reacting to this event (popup)
 - [ ] Second petri dish (maybe): a migration event where 3–5 random embers are sent to a smaller sub-canvas in the corner, founding an isolated colony.
 
 ---
 
 ## Campaign Structure
-
 The start screen has a keyword input field. Entering a keyword launches a specific teacher-directed mode. If no keyword is entered, the game starts in open play.
 
-### All modes — shared structure
+### All modes: shared structure
 1. Tutorial runs first (skippable)
 2. When the first virus outbreak ends (resolved or fully burned through), a transition popup appears: "Tutorial complete. You left the dish overnight, and came back to find... only 10 embers had survived. These are now your founding population. Your goal is to: [goal description]." (dip to black, cinematic text)
+The dip to black transition should happen right after I've clicked [skip tutorial].
 3. The tutorial population is cleared. ~10 new random embers spawn (Founding birth path — see The Allele). This demonstrates the founder effect.
 
 ### Open play
@@ -161,7 +160,6 @@ Planned modes:
 ---
 
 ## Collection System (Test Tube)
-
 A test tube is drawn on the right-hand panel area (where embers can't travel). The player drags embers into it to collect them.
 
 - Collected embers are permanently removed from the dish
@@ -169,7 +167,6 @@ A test tube is drawn on the right-hand panel area (where embers can't travel). T
 - Used to fulfill Orders
 
 ---
-
 ## Orders
 
 Random short-term missions that arrive during gameplay. Each order specifies:
@@ -181,7 +178,6 @@ Completing an order earns research credits. Orders are framed as external scient
 ---
 
 ## Shop
-
 Accessible via a `[ shop ]` button. Spend research credits on consumables and tools.
 
 | Item | Description | Cost |
@@ -198,7 +194,6 @@ Accessible via a `[ shop ]` button. Spend research credits on consumables and to
 ---
 
 ## Persistence (localStorage)
-
 Research credits, shop unlocks, and completed achievements persist across browser sessions via localStorage.
 
 Currently in use: `genesis_initials`, `genesis_medium`.

@@ -231,10 +231,10 @@ export function drawGoalIndicator(ctx, goalText) {
     ctx.textBaseline = 'top';
     ctx.font         = `${UI_FONT.XS}px monospace`;
     ctx.fillStyle    = UI_COLORS.TEXT_MUTED;
-    ctx.fillText('GOAL', 20, 110);
+    ctx.fillText('GOAL', 20, 74);
     ctx.font         = `${UI_FONT.SM}px monospace`;
     ctx.fillStyle    = UI_COLORS.TEXT;
-    ctx.fillText(goalText, 20, 124);
+    ctx.fillText(goalText, 20, 88);
     ctx.restore();
 }
 
@@ -263,15 +263,20 @@ export function drawTransitionPopup(ctx, canvas) {
 }
 
 //=== Tutorial ===
+export function getSkipBounds(canvas) {
+    return { x: canvas.width / 2 - 221, y: 10, w: 140, h: 30 };
+}
+
 export function drawSkipButton(ctx, canvas) {
+    const { x, y, w, h } = getSkipBounds(canvas);
     const fsm = Math.max(9, Math.round(UI_FONT.SM * getUIScale(canvas)));
     ctx.shadowBlur = 0;
-    ctx.fillStyle = UI_COLORS.PANEL_BG;
-    ctx.fillRect(20, 74, 130, 24);
-    ctx.font = `${fsm}px monospace`;
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillText('[ skip tutorial ]', 30, 90);
+    ctx.fillStyle  = UI_COLORS.PANEL_BG;
+    ctx.fillRect(x, y, w, h);
+    ctx.font       = `${fsm}px monospace`;
+    ctx.textAlign  = 'center';
+    ctx.fillStyle  = 'rgba(255,255,255,0.5)';
+    ctx.fillText('[ skip tutorial ]', x + w / 2, y + 16);
 }
 
 //=== Panels ===

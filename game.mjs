@@ -6,7 +6,7 @@ import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance, hitTest } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel, drawTransitionPopup } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, getSkipBounds, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel, drawTransitionPopup } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -132,7 +132,7 @@ let orders = [];
 let activeOrderIndex = 0;
 let pendingSlots  = [false, false, false];
 let slotCooldowns = [0, 0, 0];
-let researchPoints = 0;
+let researchPoints = parseInt(localStorage.getItem('genesis_reputation') ?? '0', 10);
 let canShip = false;
 
 //--- Playback ---
@@ -141,7 +141,7 @@ let fastForward = false;
 
 //--- Shop ---
 let showShop           = false;
-let microscopeUnlocked = false;
+let microscopeUnlocked = localStorage.getItem('genesis_microscope') === 'true';
 let hormoneDrops       = 0;
 let hormoneActive      = false;
 let hormoneTimer       = 0;
@@ -172,8 +172,9 @@ canvas.addEventListener('mousemove', (e) => {
         (glovesUnlocked && antibioticSprays > 0 && hitTest(mouseX, mouseY, btnX, btnY + 96, 130, 30)) ||
         (glovesUnlocked && (hormoneDrops > 0 || hormoneActive) && hitTest(mouseX, mouseY, btnX, btnY + 134, 130, 30))
     );
+    const sb = getSkipBounds(canvas);
     const hoveringSkip = currentGameState === GAME_STATE.TUTORIAL &&
-        hitTest(mouseX, mouseY, 20, 74, 130, 24);
+        hitTest(mouseX, mouseY, sb.x, sb.y, sb.w, sb.h);
 
     let hoveringOrdersPanel = false;
     if (phase2Started) {
@@ -406,6 +407,7 @@ canvas.addEventListener('click', (e) => {
             if (!isOwned && canAfford &&
                 hitTest(e.clientX, e.clientY, spx + 380 - 76, iy + 42, 60, 20)) {
                 researchPoints -= item.cost;
+                localStorage.setItem('genesis_reputation', researchPoints);
                 if (item.id === 'antibiotic_spray') {
                     antibioticSprays++;
                 } else if (item.id === 'gloves_refill') {
@@ -414,6 +416,7 @@ canvas.addEventListener('click', (e) => {
                     hormoneDrops++;
                 } else if (item.id === 'microscope') {
                     microscopeUnlocked = true;
+                    localStorage.setItem('genesis_microscope', 'true');
                 }
             }
         });
@@ -434,8 +437,9 @@ canvas.addEventListener('click', (e) => {
         return;
     }
 
+    const skipB = getSkipBounds(canvas);
     if (currentGameState === GAME_STATE.TUTORIAL &&
-        hitTest(e.clientX, e.clientY, 20, 74, 130, 24)) {
+        hitTest(e.clientX, e.clientY, skipB.x, skipB.y, skipB.w, skipB.h)) {
         skipTutorial();
         return;
     }
@@ -476,6 +480,7 @@ canvas.addEventListener('click', (e) => {
                 const totalNeeded = activeOrder.criteria.reduce((sum, line) => sum + line.count, 0);
                 if (vialContents.length === totalNeeded && checkFulfilled(activeOrder, vialContents)) {
                     researchPoints += activeOrder.reward;
+                    localStorage.setItem('genesis_reputation', researchPoints);
                     orders.splice(activeOrderIndex, 1);
                     activeOrderIndex = Math.max(0, activeOrderIndex - 1);
                     vialContents = [];
@@ -1027,6 +1032,9 @@ function skipTutorial() {
     selectedEmber = null;
     currentGoal = 'Keep them alive';
     currentGameState = GAME_STATE.PLAYING;
+    watchingFirstOutbreak = true;
+    firstOutbreakPeaked = false;
+    triggerVirusOutbreak();
 }
 
 function restartPhase2() {
