@@ -144,8 +144,9 @@ The start screen has a keyword input ("Class code") field. Entering a keyword la
 | `fixation` | Achieve fixation | All living embers carry the same color allele (≥ 10 embers) | — | You are the selector; diversity is the default |
 | `genotype` | Maintain 20 of each founding allele | Every allele in the founding population reaches ≥ 20 instances in the allele pool | — | Diversity is fragile; you work with what the founder effect gave you |
 | `founding` | Grow `[allele]` to 50 without losing any allele | The designated allele reaches ≥ 50 instances in the allele pool | Any other founding allele drops to 0 instances | Directed selection has trade-offs; you are constrained by your starting conditions |
+| `flicker` | Fulfill flicker orders: N / 5 | 5 orders containing a flicker criterion fulfilled | — | Epistasis is heritable and can be selected for |
 
-The `founding` mode randomly designates one allele from the founding population at spawn time. Win/lose detection uses `alleleCounts` (allele instances, matching what the Allele pool panel displays — both alleles per diploid ember counted).
+The `founding` mode randomly designates one allele from the founding population at spawn time. Win/lose detection uses `alleleCounts` (allele instances, matching what the Allele pool panel displays — both alleles per diploid ember counted). The `flicker` mode counts only orders that include at least one flicker criterion line — regular orders shipped in the same session don't count.
 
 ---
 

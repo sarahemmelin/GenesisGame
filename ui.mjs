@@ -242,6 +242,7 @@ const TRANSITION_GOAL_LINES = {
     fixation: 'achieve fixation: make all embers carry the same color allele.',
     genotype: 'maintain 20 or more embers of each founding allele.',
     founding: 'grow the designated allele to 50 embers, without losing the others.',
+    flicker:  'fulfill 5 orders that require flickered embers.',
     open:     'keep them alive.',
 };
 
@@ -276,6 +277,7 @@ const MODE_WIN_MESSAGES = {
     fixation: ['Fixation achieved.', 'The population has converged on a single allele.'],
     genotype: ['Diversity maintained.', 'All founding alleles have reached 20 or more instances.'],
     founding: ['Goal reached.', 'The designated allele has spread through the population.'],
+    flicker:  ['Orders fulfilled.', '5 flicker orders shipped successfully.'],
 };
 
 export function getEndGameBounds(canvas) {
