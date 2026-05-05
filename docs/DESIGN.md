@@ -1,4 +1,7 @@
-# GENESIS: EMBER — Design Document
+# GENESIS: EMBER
+Design Document
+Disclaimer: Anthropics Claude was used to help clean up this document, and for parts of the code (especially towards the end of the project) 
+
 
 ## File Structure
 
