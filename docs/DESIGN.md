@@ -39,7 +39,6 @@ COLLABORATION.md
 
 ### TODO
 - [ ] Mutation trigger: if strength drops below 0.1, consider triggering a mutation (undecided)
-- [ ] Mode games (fixation, etc.) should use the Founding birth path since explicit alleles are tutorial-only. 
 
 ---
 
@@ -117,45 +116,36 @@ born (tiny)
 ### UI
 - [ ] Fullscreen mode (Esc to exit): plan is to call `requestFullscreen()`, listen for `fullscreenchange` event, then update `canvas.width` and `canvas.height` to `window.innerWidth/innerHeight`. UI panels reposition automatically since they calculate from canvas dimensions each frame. Embers near the right boundary will self-correct via the boundary check in `update()`. Esc is handled natively by the browser.
 - [ ] Help/info menu reusing tutorial intro cards as reference for returning players
-- [ ] Bottleneck popup: if alleles go extinct, we have a popup showing: 
-The remaining population now define everyone."
-- [ ] Goal indicator on the left side of the screen showing the current goal (e.g. during tutorial: "Reach a population of 50 without any allele going extinct")
+- [ ] Bottleneck popup: if alleles go extinct, show popup: "The remaining population now define everyone."
+- [x] Goal indicator on the left side of the screen showing the current goal
 
 ### Gameplay
 - [ ] Add mutation trigger when strength < 0.1 (unsure about this)
-- [ ] Add `fertilityAlleles` — inherited trait that affects offspring count weighting (unsure about this)
-- [ ] Albinism: emerges naturally when both allele strengths drift to 0, the ember appears white. Consider detecting and reacting to this event (popup)
+- [ ] Add `fertilityAlleles`: inherited trait that affects offspring count weighting (unsure about this)
+- [ ] Albinism: emerges naturally when both allele strengths drift to 0, the ember appears white. Consider detecting and reacting to this event (popup not yet implemented)
 - [ ] Second petri dish (maybe): a migration event where 3–5 random embers are sent to a smaller sub-canvas in the corner, founding an isolated colony.
 
 ---
 
 ## Campaign Structure
-The start screen has a keyword input field. Entering a keyword launches a specific teacher-directed mode. If no keyword is entered, the game starts in open play.
+The start screen has a keyword input ("Class code") field. Entering a keyword launches a specific teacher-directed mode. If left blank, the game starts in open play.
 
-### All modes: shared structure
-1. Tutorial runs first (skippable)
-2. When the first virus outbreak ends (resolved or fully burned through), a transition popup appears: "Tutorial complete. You left the dish overnight, and came back to find... only 10 embers had survived. These are now your founding population. Your goal is to: [goal description]." (dip to black, cinematic text)
-The dip to black transition should happen right after I've clicked [skip tutorial].
-3. The tutorial population is cleared. ~10 new random embers spawn (Founding birth path — see The Allele). This demonstrates the founder effect.
+### Transition flow (all modes)
+1. Tutorial runs first (skippable via the `[ skip tutorial ]` button).
+2. **Trigger**: 10 seconds after the first virus outbreak ends (all viruses gone). If the player clicks `[ skip tutorial ]`, the transition fires immediately.
+3. Screen dips to black. Cinematic popup appears: "You left the dish overnight..." with a mode-specific goal line in accent color.
+4. Player clicks to dismiss. Tutorial population clears. 10 new random embers spawn (Founding birth path). This demonstrates the founder effect.
 
-### Open play
-No specific goal. The transition popup ends with "Your goal is to: keep them alive."
+### Modes
 
-### Modes (not yet implemented)
-Planned modes:
+| Keyword | Goal (shown in goal indicator) | Win condition | Lose condition | What it teaches |
+|---------|-------------------------------|---------------|----------------|-----------------|
+| *(none)* | Keep them alive | — | — | Free play |
+| `fixation` | Achieve fixation | All living embers carry the same color allele (≥ 10 embers) | — | You are the selector; diversity is the default |
+| `genotype` | Maintain 20 of each founding allele | Every allele in the founding population reaches ≥ 20 instances in the allele pool | — | Diversity is fragile; you work with what the founder effect gave you |
+| `founding` | Grow `[allele]` to 50 without losing any allele | The designated allele reaches ≥ 50 instances in the allele pool | Any other founding allele drops to 0 instances | Directed selection has trade-offs; you are constrained by your starting conditions |
 
-| Goal | What it teaches |
-|------|-----------------|
-| Achieve fixation (all embers carry the same color allele) | You are the selector; diversity is the default |
-| Maintain 20 or more embers of each allele present in your founding population | Diversity is fragile; you work with what the founder effect gave you |
-| Reach 50 embers carrying a game-designated allele from your founding pool, without losing the other founding alleles | Directed selection has trade-offs; you are constrained by your starting conditions |
-
-### TODO
-- Decide keyword names for each mode
-- Implement mode detection on start screen
-- Implement transition popup and population reset
-- Decide win/lose conditions per mode
-- Decide exact number of founding embers (~10 is the current thinking)
+The `founding` mode randomly designates one allele from the founding population at spawn time. Win/lose detection uses `alleleCounts` (allele instances, matching what the Allele pool panel displays — both alleles per diploid ember counted).
 
 ---
 
@@ -163,7 +153,7 @@ Planned modes:
 A test tube is drawn on the right-hand panel area (where embers can't travel). The player drags embers into it to collect them.
 
 - Collected embers are permanently removed from the dish
-- The tube can be emptied, but emptied embers are gone — not returned to the dish
+- The tube can be emptied, but emptied embers are gone and cannot be returned to the dish
 - Used to fulfill Orders
 
 ---
@@ -188,15 +178,20 @@ Accessible via a `[ shop ]` button. Spend research credits on consumables and to
 | Microscope | Shows allele overlay on all embers. Permanent unlock | 1200 |
 
 ### TODO
-- Microscope: show additional gene info in the ember info panel when active (genes present but not otherwise visible, like saturation and glow)
-- Microscope unlock should persist across browser sessions via localStorage
+- [ ] Microscope: show additional gene info in the ember info panel when active (genes present but not otherwise visible, like saturation and glow)
+- [x] Microscope unlock persists across browser sessions via localStorage
 
 ---
 
 ## Persistence (localStorage)
 Research credits, shop unlocks, and completed achievements persist across browser sessions via localStorage.
 
-Currently in use: `genesis_initials`, `genesis_medium`.
+| Key | Value | Notes |
+|-----|-------|-------|
+| `genesis_initials` | string | Prefilled on return visit |
+| `genesis_medium` | string | Prefilled on return visit |
+| `genesis_reputation` | integer string | Research points (reputation/coin) balance |
+| `genesis_microscope` | `'true'` or absent | Permanent microscope unlock |
 
 ### Tutorial (separate from real game)
 
@@ -264,3 +259,6 @@ The tutorial is a scripted scene which is separate from the real game. It spawns
 
 [x] Pause behavior:
 Originally pausing froze the game but still allowed the player to drag embers around, which was an unintended way to cheat. It was fixed by intercepting mousedown while paused: any click anywhere on the canvas unpauses and does nothing else, so no ember can be picked up while the game is frozen.
+
+[x] Teacher modes and founding population transition:
+A keyword ("Class code") input was added to the start screen so teachers can launch specific modes without exposing mode names in the UI. Three keywords were decided: `fixation`, `genotype`, and `founding`. Each mode has a win condition tied to `carrierCounts` (per-ember allele carrier count, distinct from raw allele instance count to avoid double-counting heterozygous embers). The transition from tutorial to real game is a dip-to-black cinematic popup that fires either 10 seconds after the first virus outbreak ends, or immediately when the player clicks skip. 10 founding embers spawn after the player dismisses the popup (Founding birth path, near-zero flicker). The `founding` mode additionally picks a randomly designated allele from the founding pool as the growth target, and loses if any other founding allele goes extinct.
