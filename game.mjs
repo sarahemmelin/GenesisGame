@@ -45,7 +45,7 @@ startButton.addEventListener('click', () => {
     playerSource   = sourceInput.value.trim()   || '—';
     playerMedium   = document.querySelector('input[name="medium"]:checked').value;
     const keyword  = keywordInput.value.trim().toLowerCase();
-    gameMode = ['fixation', 'genotype', 'founding'].includes(keyword) ? keyword : 'open';
+    gameMode = ['fixation', 'genotype', 'founding', 'flicker'].includes(keyword) ? keyword : 'open';
     localStorage.setItem('genesis_initials', playerInitials);
     localStorage.setItem('genesis_medium',   playerMedium);
     canvas.style.backgroundColor = MEDIUM_COLORS[playerMedium] ?? '#1a1a14';
@@ -138,6 +138,7 @@ let foundingAlleles  = [];
 let showModeWin      = false;
 let showModeLose     = false;
 let modeLoseReason   = '';
+let flickerOrdersFulfilled = 0;
 let currentGoal = '';
 let orders = [];
 let activeOrderIndex = 0;
@@ -322,6 +323,8 @@ canvas.addEventListener('mousedown', (e) => {
             currentGoal = 'Achieve fixation';
         } else if (gameMode === 'genotype') {
             currentGoal = 'Maintain 20 of each founding allele';
+        } else if (gameMode === 'flicker') {
+            currentGoal = `Fulfill flicker orders: 0 / 5`;
         } else {
             currentGoal = 'Keep them alive';
         }
@@ -511,6 +514,10 @@ canvas.addEventListener('click', (e) => {
                 if (vialContents.length === totalNeeded && checkFulfilled(activeOrder, vialContents)) {
                     researchPoints += activeOrder.reward;
                     localStorage.setItem('genesis_reputation', researchPoints);
+                    if (gameMode === 'flicker' && activeOrder.criteria.some(line => line.flicker === true)) {
+                        flickerOrdersFulfilled++;
+                        currentGoal = `Fulfill flicker orders: ${flickerOrdersFulfilled} / 5`;
+                    }
                     orders.splice(activeOrderIndex, 1);
                     activeOrderIndex = Math.max(0, activeOrderIndex - 1);
                     vialContents = [];
@@ -963,6 +970,9 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
                 showModeWin = true;
                 paused = true;
             }
+        } else if (gameMode === 'flicker' && flickerOrdersFulfilled >= 5) {
+            showModeWin = true;
+            paused = true;
         }
     }
 
