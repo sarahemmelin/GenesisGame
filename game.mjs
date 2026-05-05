@@ -49,7 +49,9 @@ startButton.addEventListener('click', () => {
     localStorage.setItem('genesis_initials', playerInitials);
     localStorage.setItem('genesis_medium',   playerMedium);
     canvas.style.backgroundColor = MEDIUM_COLORS[playerMedium] ?? '#1a1a14';
+    canvas.style.display = '';
     startScreen.style.display = 'none';
+    currentGoal = 'Find a blue male and a gold female, drag them together';
     initLabelCache(playerInitials, playerMedium, playerSource);
     initVialCache(canvas);
     requestAnimationFrame(gameLoop);
@@ -998,7 +1000,10 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
         drawVialUI(ctx, canvas, vialContents, vialCapacity, showEmptyConfirm, canShip);
     }
     drawLabel(ctx);
-    drawGoalIndicator(ctx, currentGoal);
+    const anyPopup = showGermIntroPopup || showGlovesPopup || showPhase2Win || isShowingIntro() || isShowingGoalCards() || showExtinctPopup || showTransition || showModeWin || showModeLose;
+    if (!anyPopup) {
+        drawGoalIndicator(ctx, currentGoal);
+    }
     drawPauseForwardButtons(ctx, canvas, paused, fastForward);
     if (currentGameState === GAME_STATE.TUTORIAL) {
         drawSkipButton(ctx, canvas);
