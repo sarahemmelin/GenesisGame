@@ -110,7 +110,7 @@ born (tiny)
 ## Architecture Principles
 
 - **Fail loudly**: missing required data should throw a visible error, not silently produce wrong values (because Christian says so)
-- **Design for extension**: alleles blend by strength rather than using a simple "one allele wins" system. This means co-dominance (both alleles express at once, like blood type AB) and epistasis (one gene suppressing another, like the flicker gene already does) work without rewriting anything. 
+- **Design for extension**: alleles blend by strength rather than using a simple "one allele wins" system. This means incomplete dominance (alleles blend proportionally by strength) and epistasis (one gene suppressing another, like the flicker gene already does) work without rewriting anything. 
 - **One responsibility per file**: Allele knows about alleles, Ember knows about one ember, game.mjs knows about the world. Good, plain, old JavaScript.
 
 ---
@@ -149,7 +149,7 @@ The start screen has a keyword input ("Class code") field. Entering a keyword la
 | `founding` | Grow `[allele]` to 50 without losing any allele | The designated allele reaches ≥ 50 instances in the allele pool | Any other founding allele drops to 0 instances | Directed selection has trade-offs; you are constrained by your starting conditions |
 | `flicker` | Fulfill flicker orders: N / 5 | 5 orders containing a flicker criterion fulfilled | — | Epistasis is heritable and can be selected for |
 
-The `founding` mode randomly designates one allele from the founding population at spawn time. Win/lose detection uses `alleleCounts` (allele instances, matching what the Allele pool panel displays — both alleles per diploid ember counted). The `flicker` mode counts only orders that include at least one flicker criterion line — regular orders shipped in the same session don't count.
+The `founding` mode randomly designates one allele from the founding population at spawn time. Win/lose detection uses `alleleCounts` (allele instances, matching what the Allele pool panel displays, both alleles per diploid ember counted). The `flicker` mode counts only orders that include at least one flicker criterion line, regular orders shipped in the same session don't count.
 
 ---
 
