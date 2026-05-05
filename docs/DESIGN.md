@@ -1,5 +1,7 @@
-# GENESIS: EMBER — Design Document
-Disclaimer: This document is written with the aid of Anthropics Claude
+# GENESIS: EMBER
+Design Document
+Disclaimer: Anthropics Claude was used to help clean up this document, and for parts of the code (especially towards the end of the project) 
+
 
 ## File Structure
 
