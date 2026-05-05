@@ -238,7 +238,14 @@ export function drawGoalIndicator(ctx, goalText) {
     ctx.restore();
 }
 
-export function drawTransitionPopup(ctx, canvas) {
+const TRANSITION_GOAL_LINES = {
+    fixation: 'achieve fixation: make all embers carry the same color allele.',
+    genotype: 'maintain 20 or more embers of each founding allele.',
+    founding: 'grow the designated allele to 50 embers, without losing the others.',
+    open:     'keep them alive.',
+};
+
+export function drawTransitionPopup(ctx, canvas, gameMode = 'open') {
     const cx = canvas.width / 2;
     const cy = canvas.height / 2;
     ctx.save();
@@ -246,19 +253,91 @@ export function drawTransitionPopup(ctx, canvas) {
     ctx.textBaseline = 'middle';
     ctx.shadowBlur   = 0;
 
-    ctx.font      = `${UI_FONT.XL}px monospace`;
+    ctx.font      = `${UI_FONT.SM}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT_MUTED;
     ctx.fillText('Tutorial complete.', cx, cy - 90);
 
-    ctx.font      = `${UI_FONT.XXL}px monospace`;
+    ctx.font      = `${UI_FONT.BASE}px monospace`;
     ctx.fillStyle = UI_COLORS.TEXT;
-    ctx.fillText('You left the petri dish overnight.', cx, cy - 48);
+    ctx.fillText('You left the dish overnight.', cx, cy - 48);
     ctx.fillText('When you returned, only a handful of embers remained.', cx, cy - 16);
     ctx.fillText('These are now your founding population.', cx, cy + 16);
 
-    ctx.font      = `${UI_FONT.XL}px monospace`;
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.ACCENT;
+    ctx.fillText(`Your goal: ${TRANSITION_GOAL_LINES[gameMode] ?? TRANSITION_GOAL_LINES.open}`, cx, cy + 48);
+
     ctx.fillStyle = UI_COLORS.TEXT_MUTED;
-    ctx.fillText('click anywhere to continue', cx, cy + 80);
+    ctx.fillText('click anywhere to continue', cx, cy + 90);
+    ctx.restore();
+}
+
+const MODE_WIN_MESSAGES = {
+    fixation: ['Fixation achieved.', 'The population has converged on a single allele.'],
+    genotype: ['Diversity maintained.', 'All founding alleles have reached 20 or more instances.'],
+    founding: ['Goal reached.', 'The designated allele has spread through the population.'],
+};
+
+export function getEndGameBounds(canvas) {
+    const w = 180;
+    const h = 34;
+    return { x: canvas.width / 2 - w / 2, y: canvas.height / 2 + 80, w, h };
+}
+
+export function drawModeWin(ctx, canvas, gameMode, designatedAllele) {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur   = 0;
+
+    const lines = MODE_WIN_MESSAGES[gameMode] ?? ['Goal reached.', ''];
+    ctx.font      = `28px monospace`;
+    ctx.fillStyle = UI_COLORS.ACCENT;
+    ctx.fillText(lines[0], cx, cy - 40);
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT;
+    if (gameMode === 'founding' && designatedAllele) {
+        ctx.fillText(`${designatedAllele} reached 50 allele instances.`, cx, cy + 10);
+    } else {
+        ctx.fillText(lines[1], cx, cy + 10);
+    }
+
+    const btn = getEndGameBounds(canvas);
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.ACCENT;
+    ctx.fillText('[ back to start ]', cx, btn.y + btn.h / 2);
+    ctx.restore();
+}
+
+export function drawModeLose(ctx, canvas, reason) {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowBlur   = 0;
+
+    ctx.font      = `28px monospace`;
+    ctx.fillStyle = UI_COLORS.DANGER;
+    ctx.fillText('Goal failed.', cx, cy - 40);
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT;
+    ctx.fillText(reason, cx, cy + 10);
+
+    const btn = getEndGameBounds(canvas);
+    ctx.fillStyle = UI_COLORS.PANEL_BG;
+    ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
+    ctx.font      = `${UI_FONT.SM}px monospace`;
+    ctx.fillStyle = UI_COLORS.TEXT;
+    ctx.fillText('[ back to start ]', cx, btn.y + btn.h / 2);
     ctx.restore();
 }
 

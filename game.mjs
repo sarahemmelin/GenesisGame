@@ -6,7 +6,7 @@ import { BASE_COLORS, GAME_STATE, TUTORIAL_STEP, SHOP_ITEMS } from "./constants.
 import { generateOrder, updateOrders, checkFulfilled } from "./orders.mjs";
 import { spawnTutorialEmbers, isShowingIntro, isShowingMatingSuccess, isShowingGoalCards, isTutorialActive, getStep, draw as drawTutorial, handleClick as handleTutorialClick, update as updateTutorial, resetToPhase2, completeTutorial } from "./tutorial.mjs";
 import { distance, hitTest } from "./utilities.mjs";
-import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, getSkipBounds, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel, drawTransitionPopup } from "./ui.mjs";
+import { initLabelCache, drawLabel, drawGoalIndicator, drawSkipButton, getSkipBounds, getEndGameBounds, initVialCache, drawVial, drawVialContents, drawVialUI, getVialX, getVialY, getVialHeight, getVialEmberR, getUIScale, VIAL_WIDTH, drawPopulationPanel, drawModeButtons, drawShopButton, drawShopPopup, drawMicroscopeOverlay, drawPauseForwardButtons, drawEmberInfoPanel, drawExtinctPopup, drawPopupOverlay, drawGermIntroPopup, drawGlovesPopup, drawPhase2Win, drawOrdersPanel, drawTransitionPopup, drawModeWin, drawModeLose } from "./ui.mjs";
 
 
 //=== Canvas setup ===
@@ -21,6 +21,7 @@ const startScreen   = document.getElementById('start-screen');
 const startButton   = document.getElementById('start-button');
 const initialsInput = document.getElementById('initials');
 const sourceInput   = document.getElementById('source');
+const keywordInput  = document.getElementById('keyword');
 
 let playerInitials = '';
 let playerSource   = '';
@@ -43,6 +44,8 @@ startButton.addEventListener('click', () => {
     playerInitials = initialsInput.value.trim() || '—';
     playerSource   = sourceInput.value.trim()   || '—';
     playerMedium   = document.querySelector('input[name="medium"]:checked').value;
+    const keyword  = keywordInput.value.trim().toLowerCase();
+    gameMode = ['fixation', 'genotype', 'founding'].includes(keyword) ? keyword : 'open';
     localStorage.setItem('genesis_initials', playerInitials);
     localStorage.setItem('genesis_medium',   playerMedium);
     canvas.style.backgroundColor = MEDIUM_COLORS[playerMedium] ?? '#1a1a14';
@@ -127,6 +130,12 @@ let vialCapacity = 10;
 let showEmptyConfirm = false;
 
 //--- Orders ---
+let gameMode         = 'open';
+let designatedAllele = null;
+let foundingAlleles  = [];
+let showModeWin      = false;
+let showModeLose     = false;
+let modeLoseReason   = '';
 let currentGoal = '';
 let orders = [];
 let activeOrderIndex = 0;
@@ -281,6 +290,14 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 canvas.addEventListener('mousedown', (e) => {
+    if (showModeWin || showModeLose) {
+        const btn = getEndGameBounds(canvas);
+        if (hitTest(e.clientX, e.clientY, btn.x, btn.y, btn.w, btn.h)) {
+            startScreen.style.display = '';
+            canvas.style.display = 'none';
+        }
+        return;
+    }
     if (paused) {
         paused = false;
         return;
@@ -294,7 +311,18 @@ canvas.addEventListener('mousedown', (e) => {
         draggedEmber = null;
         vialContents = [];
         spawnFoundingEmbers(10);
-        currentGoal = 'Keep them alive';
+        foundingAlleles = [...new Set(embers.flatMap(e => e.colorAlleles.map(a => a.value)))];
+        if (gameMode === 'founding') {
+            const present = [...foundingAlleles];
+            designatedAllele = present[Math.floor(Math.random() * present.length)];
+            currentGoal = `Grow ${designatedAllele} to 50 embers`;
+        } else if (gameMode === 'fixation') {
+            currentGoal = 'Achieve fixation';
+        } else if (gameMode === 'genotype') {
+            currentGoal = 'Maintain 20 of each founding allele';
+        } else {
+            currentGoal = 'Keep them alive';
+        }
         return;
     }
     const btnX = canvas.width - 370;
@@ -913,12 +941,27 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
     }
     
 
-    if (isFixed && embers.length >= 10){
-        ctx.fillStyle = 'orange';
-        ctx.font = 'bold 72px serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('FIXATION', canvas.width / 2, canvas.height / 2);
-        return;
+    if (currentGameState === GAME_STATE.PLAYING && !showModeWin && !showModeLose && !showTransition && embers.length > 0) {
+        if (gameMode === 'fixation' && isFixed && embers.length >= 10) {
+            showModeWin = true;
+            paused = true;
+        } else if (gameMode === 'genotype' && foundingAlleles.length > 0) {
+            const allAbove20 = foundingAlleles.every(a => (alleleCounts[a] || 0) >= 20);
+            if (allAbove20) {
+                showModeWin = true;
+                paused = true;
+            }
+        } else if (gameMode === 'founding' && designatedAllele && foundingAlleles.length > 0) {
+            const otherLost = foundingAlleles.find(a => a !== designatedAllele && !(alleleCounts[a] > 0));
+            if (otherLost) {
+                showModeLose = true;
+                modeLoseReason = `${otherLost} went extinct.`;
+                paused = true;
+            } else if ((alleleCounts[designatedAllele] || 0) >= 50) {
+                showModeWin = true;
+                paused = true;
+            }
+        }
     }
 
     //--- Orders update ---
@@ -968,9 +1011,11 @@ if (microscopeUnlocked) { drawMicroscopeOverlay(ctx, embers); }
         ctx.fillStyle = `rgba(0,0,0,${transitionAlpha})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         if (transitionPhase === 'text') {
-            drawTransitionPopup(ctx, canvas);
+            drawTransitionPopup(ctx, canvas, gameMode);
         }
     }
+    if (showModeWin)  { drawModeWin(ctx, canvas, gameMode, designatedAllele); }
+    if (showModeLose) { drawModeLose(ctx, canvas, modeLoseReason); }
     requestAnimationFrame(gameLoop);
 }
 
