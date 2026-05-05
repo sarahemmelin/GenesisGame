@@ -1,0 +1,613 @@
+/* ==========================================
+   Genesis: Ember — Teacher's Guide
+   Stylesheet v1.0
+   =========================================== */
+
+/* -------- CSS Variables -------- */
+:root {
+  /* Dark theme (screen) */
+  --bg-page: #24221e;
+  --bg-content: #252521;
+  --bg-box: rgba(238, 232, 213, 0.92);
+  --bg-box-alt: rgba(238, 232, 213, 0.85);
+  --bg-sidebar: rgba(0, 0, 0, 0.6);
+  --bg-topbar: rgba(0, 0, 0, 0.85);
+
+  --text-main: #222;
+  --text-light: #eee;
+  --text-muted: #666;
+  --text-heading: #111;
+
+  --accent-cyan: rgb(0, 180, 216);
+  --accent-gold: rgb(255, 244, 191);
+  --accent-green: rgb(80, 200, 120);
+  --accent-yellow: rgb(240, 192, 64);
+  --accent-danger: rgb(230, 57, 70);
+
+  /* Ember colors (from constants.mjs) */
+  --ember-crimson: rgb(230, 57, 70);
+  --ember-gold: rgb(255, 215, 0);
+  --ember-violet: rgb(155, 93, 229);
+  --ember-blue: rgb(0, 180, 216);
+
+  /* Layout */
+  --sidebar-width: 14rem;
+  --topbar-height: 3.5rem;
+
+  /* Typography */
+  --font-body: 'EB Garamond', serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+}
+
+
+/* ==========================================
+   Global Reset & Base
+   =========================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--topbar-height) + 1rem);
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 1.15rem;
+  line-height: 1.6;
+  color: var(--text-light);
+  background-color: var(--bg-page);
+}
+
+/* ==========================================
+   Top Bar
+   =========================================== */
+
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--topbar-height);
+  background: var(--bg-topbar);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.top-bar-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.02em;
+}
+
+.top-bar-subtitle {
+  font-weight: 400;
+  color: var(--accent-gold);
+  margin-left: 0.4rem;
+}
+
+.top-bar-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.top-bar-button {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 0.35rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.top-bar-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.top-bar-launch {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.top-bar-launch:hover {
+  background: rgba(240, 192, 64, 0.15);
+}
+
+
+/* ==========================================
+   Page Layout (CSS Grid)
+   =========================================== */
+
+/* Define outer grid: sidebar + main content */
+.page-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  margin-top: var(--topbar-height);
+  min-height: calc(100vh - var(--topbar-height));
+}
+
+
+/* ==========================================
+   Sidebar (folder tabs)
+   =========================================== */
+
+.sidebar {
+  position: sticky;
+  top: var(--topbar-height);
+  height: calc(100vh - var(--topbar-height));
+  overflow-y: auto;
+  background: transparent;
+  padding: 1.5rem 0 1.5rem 0.5rem;
+}
+
+.sidebar-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Each link = a folder tab sticking out */
+.sidebar-link {
+  display: block;
+  padding: 0.5rem 1rem 0.5rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-main);
+  text-decoration: none;
+  background: var(--bg-box-alt);
+  border-radius: 4px 0 0 4px;
+  border-left: 3px solid rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  position: relative;
+}
+
+.sidebar-link:hover {
+  background: var(--bg-box);
+  transform: translateX(4px);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+  border-left-color: var(--accent-cyan);
+}
+
+.sidebar-link-indent {
+  padding-left: 1.4rem;
+  font-size: 0.75rem;
+  background: rgba(220, 214, 196, 0.75);
+}
+
+.sidebar-link-indent:hover {
+  background: rgba(230, 224, 206, 0.9);
+}
+
+
+/* ==========================================
+   Main Content
+   =========================================== */
+
+.content {
+  padding: 2.5rem 3rem 4rem;
+  max-width: 52rem;
+  background: var(--bg-box);
+  color: var(--text-main);
+  overflow: visible;
+  box-shadow:
+    2px 0 12px rgba(0, 0, 0, 0.3),
+    -1px 0 4px rgba(0, 0, 0, 0.15);
+}
+
+.content-section {
+  margin-bottom: 3rem;
+}
+
+.content-section p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.content-section h2 {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.section-placeholder {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Scientific terminology — small caps inline */
+.term {
+  font-family: 'EB Garamond', serif;
+  font-variant: small-caps;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Game name reference — small caps with slight emphasis */
+.game-name {
+  font-family: 'EB Garamond', serif;
+  font-variant: small-caps;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+
+/* ==========================================
+   Margin Notes (in the dark area right of parchment)
+   =========================================== */
+
+.content-section {
+  position: relative;
+}
+
+.margin-note {
+  position: absolute;
+  right: -15rem;
+  width: 11rem;
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  color: rgba(216, 232, 238, 0.89);
+  line-height: 1.4;
+  transform: rotate(-1deg);
+  pointer-events: none;
+}
+
+/* Lab label in the margin — replicates the petri dish sticker */
+.margin-label {
+  position: absolute;
+  right: -13rem;
+  width: 12rem;
+  background: rgba(238, 232, 213, 0.92);
+  color: #222;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.6;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 2px;
+  transform: rotate(1.5deg);
+  pointer-events: none;
+}
+
+.margin-label-title {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+
+/* ==========================================
+   Content Boxes (shared base)
+   =========================================== */
+
+/* Inset card on parchment surface */
+.guide-box {
+  position: relative;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-main);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Tape strip — base style
+   Tweak: top/right/left → position, width/height → size, rotate → tilt */
+.guide-box::before {
+  content: '';
+  position: absolute;
+  width: 3.8rem;
+  height: 1.8rem;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 240, 0.5) 0%,
+      rgba(255, 255, 220, 0.3) 50%,
+      rgba(255, 255, 240, 0.5) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 1px;
+  pointer-events: none;
+
+  /* default: top-right, slight clockwise tilt */
+  top: -7px;
+  right: 14px;
+  transform: rotate(3deg);
+}
+
+/* Variation A: top-left, tilted counter-clockwise, slightly longer */
+.guide-box:nth-child(even)::before,
+.guide-box.tape-var-a::before {
+  right: auto;
+  left: 18px;
+  width: 4.8rem;
+  transform: rotate(-2deg);
+}
+
+/* Variation B: centered-ish, nearly straight */
+.guide-box:nth-child(3n)::before,
+.guide-box.tape-var-b::before {
+  right: 30%;
+  transform: rotate(1deg);
+}
+
+/* Variation C: far right, steeper tilt, longest piece */
+.guide-box:nth-child(4n+3)::before,
+.guide-box.tape-var-c::before {
+  right: 6px;
+  top: -8px;
+  width: 5.5rem;
+  transform: rotate(5deg);
+}
+
+/* Variation D: left-center, slight counter */
+.guide-box:nth-child(5n)::before,
+.guide-box.tape-var-d::before {
+  right: auto;
+  left: 25%;
+  transform: rotate(-1.5deg);
+}
+
+/* No tape on small boxes inside the two-col grid */
+.two-col-grid .guide-box::before {
+  display: none;
+}
+
+.guide-box-title {
+  font-family: var(--font-body);
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-heading);
+  margin-bottom: 0.5rem;
+}
+
+/* Ember-dot bullet list */
+.ember-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.ember-list li {
+  padding: 0.35rem 0;
+  line-height: 1.5;
+}
+
+/* In-game example (cyan left border) */
+.guide-box-ingame {
+  border-left: 4px solid var(--accent-cyan);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  background: rgba(0, 180, 216, 0.06);
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: 3px;
+}
+
+/* Warning box (yellow left border) */
+.guide-box-warning {
+  border-left: 4px solid var(--accent-yellow);
+  background: rgba(240, 192, 64, 0.08);
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: 3px;
+  font-size: 0.92rem;
+}
+
+/* Discussion box (green left border) */
+.guide-box-discussion {
+  border-left: 4px solid var(--accent-green);
+  background: rgba(80, 200, 120, 0.06);
+  padding: 0.75rem 1rem;
+  margin-top: 0.75rem;
+  border-radius: 3px;
+}
+
+
+/* ==========================================
+   CSS Ember Dots
+   =========================================== */
+
+/* Inline ember dot — glowing on screen */
+.ember-dot {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  vertical-align: middle;
+  margin-right: 0.3rem;
+}
+
+/* Male = circle, female = rounded square */
+.ember-dot-female {
+  border-radius: 25%;
+}
+
+.ember-dot-crimson {
+  background: var(--ember-crimson);
+  box-shadow: 0 0 8px var(--ember-crimson), 0 0 16px rgba(230, 57, 70, 0.4);
+}
+
+.ember-dot-gold {
+  background: var(--ember-gold);
+  box-shadow: 0 0 8px var(--ember-gold), 0 0 16px rgba(255, 215, 0, 0.4);
+}
+
+.ember-dot-violet {
+  background: var(--ember-violet);
+  box-shadow: 0 0 8px var(--ember-violet), 0 0 16px rgba(155, 93, 229, 0.4);
+}
+
+.ember-dot-blue {
+  background: var(--ember-blue);
+  box-shadow: 0 0 8px var(--ember-blue), 0 0 16px rgba(0, 180, 216, 0.4);
+}
+
+
+/* ==========================================
+   Two-Column Grid
+   =========================================== */
+
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+
+/* ==========================================
+   Mode Cards Grid (2x2)
+   =========================================== */
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.mode-card {
+  background: var(--bg-box);
+  color: var(--text-main);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+}
+
+.mode-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin-bottom: 0.25rem;
+}
+
+.mode-card-code {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent-cyan);
+  margin-bottom: 0.5rem;
+}
+
+
+/* ==========================================
+   Responsive — Small Screens
+   =========================================== */
+
+@media (max-width: 768px) {
+  .page-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .content {
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .margin-note,
+  .margin-label {
+    display: none;
+  }
+
+  .two-col-grid,
+  .mode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ==========================================
+   Print Theme
+   =========================================== */
+
+@media print {
+
+  /* Light background, dark text */
+  body {
+    background: white;
+    color: #222;
+    font-size: 11pt;
+  }
+
+  /* Hide interactive/decorative elements */
+  .top-bar,
+  .sidebar,
+  .margin-note,
+  .margin-label {
+    display: none;
+  }
+
+  .page-layout {
+    display: block;
+    margin-top: 0;
+  }
+
+  .content {
+    max-width: 100%;
+    padding: 0;
+    border-left: none;
+    background: white;
+    box-shadow: none;
+  }
+
+  .content-section h2 {
+    color: #222;
+    border-bottom-color: #999;
+  }
+
+  /* Boxes: light bg with borders */
+  .guide-box,
+  .mode-card {
+    background: #f9f7f2;
+    border: 1px solid #ccc;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+
+  .guide-box::before {
+    display: none;
+  }
+
+  /* Ember dots: solid colors, no glow */
+  .ember-dot {
+    box-shadow: none;
+    border: 1px solid #999;
+  }
+
+  /* Grids: single column for narrow print */
+  .two-col-grid,
+  .mode-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Section placeholder text hidden */
+  .section-placeholder {
+    display: none;
+  }
+}

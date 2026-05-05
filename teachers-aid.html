@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Genesis: Ember - Teacher's Guide</title>
+  <meta name="description"
+    content="A classroom guide for using Genesis: Ember to teach genetics concepts including alleles, genetic drift, natural selection, and epistasis.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="teachers-aid.css">
+</head>
+
+<body>
+
+  <header class="top-bar">
+    <h1 class="top-bar-title">Genesis: Ember <span class="top-bar-subtitle">Teacher's Guide</span></h1>
+    <div class="top-bar-actions">
+      <button id="printButton" class="top-bar-button" onclick="window.print()">Print</button>
+      <a href="index.html" class="top-bar-button top-bar-launch">Launch Game</a>
+    </div>
+  </header>
+
+  <div class="page-layout">
+
+    <nav class="sidebar" aria-label="Table of contents">
+      <ul class="sidebar-list">
+        <li><a href="#introduction" class="sidebar-link">Introduction</a></li>
+        <li><a href="#before-playing" class="sidebar-link">Before Playing</a></li>
+        <li><a href="#modes-overview" class="sidebar-link">Game Modes</a></li>
+        <li>
+          <a href="#mode-fixation" class="sidebar-link sidebar-link-indent">Fixation</a>
+        </li>
+        <li>
+          <a href="#mode-genotype" class="sidebar-link sidebar-link-indent">Diversity</a>
+        </li>
+        <li>
+          <a href="#mode-founding" class="sidebar-link sidebar-link-indent">Directed Selection</a>
+        </li>
+        <li>
+          <a href="#mode-flicker" class="sidebar-link sidebar-link-indent">Epistasis</a>
+        </li>
+        <li><a href="#after-playing" class="sidebar-link">After Playing</a></li>
+        <li><a href="#reference" class="sidebar-link">Reference</a></li>
+      </ul>
+    </nav>
+
+    <main class="content">
+
+      <section id="introduction" class="content-section">
+        <h2>Introduction</h2>
+
+        <!-- Margin elements (in the dark right area) -->
+        <div class="margin-note" style="top: 6rem;">
+          Try having students predict what will happen before each mode, it will help them reflect on the game while
+          playing!
+        </div>
+
+        <div class="margin-label" style="top: 20rem;">
+          <span class="margin-label-title">PETRI DISH&emsp;</span><br>
+          Medium: LB Agar<br>
+          Source: Mrs. Hansen's desk<br>
+          Sample: Genesis Ember v1.4
+        </div>
+
+        <p>
+          This guide will help you use <span class="game-name">Genesis: Ember</span> as a teaching tool in your
+          classroom. Each section contains explanations, discussions you can have with your class, and observation
+          activities tied to the game's mechanics.
+        </p>
+
+        <div class="guide-box">
+          <h3 class="guide-box-title">What is <span class="game-name">Genesis: Ember</span>?</h3>
+          <p>
+            <span class="game-name">Genesis: Ember</span> is a browser-based genetics simulation where students manage a
+            population
+            of glowing organisms called <em>Embers</em> inside a virtual petri dish.
+            Through gameplay, students observe <span class="term">genetic inheritance</span>, <span class="term">random
+              drift</span>,
+            <span class="term">population bottlenecks</span>, and the <span class="term">founder effect</span> in
+            real-time.
+          </p>
+        </div>
+
+        <div class="guide-box">
+          <h3 class="guide-box-title">Learning Outcomes</h3>
+          <p>After reflecting on the game, the students should understand:</p>
+          <ul class="ember-list">
+            <li>
+              <span class="ember-dot ember-dot-crimson"></span>
+              <strong>The Founder Effect:</strong> A small founding population carries only a subset of
+              the original gene pool, and that subset defines all future generations.
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-gold"></span>
+              <strong>Genetic Drift:</strong> Allele frequencies change randomly over generations,
+              independent of fitness or selection.
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-violet"></span>
+              <strong>Bottleneck Effect:</strong> A sudden population crash reduces genetic
+              diversity dramatically and unpredictably.
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-blue"></span>
+              <strong>Epistasis:</strong> Some genes mask the expression of others,
+              creating hidden genetic variation.
+            </li>
+          </ul>
+        </div>
+
+        <div class="two-col-grid">
+          <div class="guide-box">
+            <h3 class="guide-box-title">Target Audience</h3>
+            <p>
+              Designed for high school biology students (ages 15–19), and adaptable as a student
+              activity in an introductory university genetics courses.
+            </p>
+          </div>
+          <div class="guide-box">
+            <h3 class="guide-box-title">Suggested Play Time</h3>
+            <p>
+              <strong>One session:</strong> 15 minutes for a single game mode.<br>
+              <strong>All sessions:</strong> 60 - 90 minutes to cover all modes with guided discussion.
+            </p>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="before-playing" class="content-section">
+        <h2>Before Playing: Foundational Concepts</h2>
+
+        <!-- Margin note for this section -->
+        <div class="margin-note" style="top: 3rem;">
+          The game goes beyond Mendel: alleles blend, genes mask each other, and drift does the rest
+        </div>
+
+        <p>
+          These are the core biology concepts students will encounter during gameplay. Consider
+          introducing them briefly before students play, or use this section as a reference
+          during discussion.
+        </p>
+
+        <!-- Concept 1: Alleles & Diploidy -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Alleles &amp; Diploidy</h3>
+          <p>
+            An <span class="term">allele</span> is a specific variation of a gene's DNA sequence.
+            Most organisms we commonly think of are <span class="term">diploid</span>, meaning they carry
+            two <span class="term">alleles</span> for each gene, one inherited from each parent. The physical traits
+            we see are rarely the result of a "winner" or "loser" allele. Instead, traits
+            emerge from a nuanced blend or specific expression.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] Each ember is diploid: it carries two colour alleles. Click any
+            ember to see its alleles in the info panel (e.g. <strong>crimson</strong> +
+            <strong>gold</strong>).
+          </div>
+        </div>
+
+        <!-- Concept 2: Genotype vs Phenotype -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Genotype vs Phenotype</h3>
+          <p>
+            The <span class="term">genotype</span> is the set of genes an organism carries in its DNA, the blueprint.
+            The <span class="term">phenotype</span> is the observable expression of those
+            genes, representing what you actually see. Think of it as:
+          </p>
+          <p style="text-align: center; font-family: var(--font-mono); font-size: 0.95rem;">
+            Genotype + Environment = Phenotype
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] An ember's visible colour (phenotype) is a blend of its two
+            colour alleles (genotype). Two embers that look similar might carry very
+            different allele combinations, and vice versa.
+          </div>
+        </div>
+
+        <!-- Concept 3: Incomplete Dominance -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Incomplete Dominance</h3>
+          <p>
+            In <span class="term">incomplete dominance</span>, neither allele fully masks the other.
+            Instead, each gene "gives a little," resulting in a blend between the traits.
+            The phenotype is a mix proportional to each allele's expression strength.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] Each allele has a <em>strength</em> value (0.0–1.0). The ember's
+            final colour is a weighted blend of both alleles' colours. A crimson (0.8) + gold (0.3)
+            ember will appear more red than yellow.
+          </div>
+          <div class="guide-box-warning">
+            ⚠ <strong>Not the same as <span class="term">co-dominance</span>.</strong> In <span
+              class="term">co-dominance</span>, both alleles
+            express fully and side by side (like blood type AB, where both A and B are present).
+            In <span class="term">incomplete dominance</span>, the result is a single blended trait. The game uses
+            <span class="term">incomplete dominance</span>.
+          </div>
+        </div>
+
+        <!-- Concept 4: Gene Pool -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Gene Pool</h3>
+          <p>
+            A <span class="term">gene pool</span> is the combination of all genes (including all allele
+            variants) present in a reproducing population. A large gene pool means extensive
+            genetic diversity and a population that is better able to withstand environmental
+            challenges. A small gene pool makes populations less able to adapt.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] The allele frequency panel on the right side of the screen shows
+            your population's gene pool. Watch how it changes over time, as this is the
+            foundation for everything that follows.
+          </div>
+        </div>
+
+        <!-- Concept 5: Genetic Drift -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Genetic Drift</h3>
+          <p>
+            <span class="term">Genetic drift</span> is a random fluctuation in the frequency of an allele
+            in a population. It has nothing to do with fitness or selection, but rather it is pure chance.
+            Drift is strongest in small populations, and can cause traits to become overwhelmingly
+            frequent or to disappear entirely.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] Even without any player intervention, allele proportions shift randomly
+            from generation to generation. Both the founder effect and bottleneck events
+            result in genetic drift.
+          </div>
+        </div>
+
+        <!-- Concept 6: Population Bottleneck -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Population Bottleneck</h3>
+          <p>
+            A <span class="term">bottleneck</span> occurs when something eliminates a large part of a
+            population (a natural disaster, an epidemic), resulting in a new allele frequency.
+            The survivors carry only a fraction of the original genetic diversity, and that
+            reduced diversity defines all future generations.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] Germ outbreaks and virus epidemics can kill large portions of the
+            population quickly. After the event, check the allele panel and notice how many
+            alleles may have been lost.
+          </div>
+          <div class="guide-box-warning">
+            ⚠ A bottleneck is not the same as natural selection. The survivors are not
+            necessarily "fitter", they simply happened to survive.
+          </div>
+        </div>
+
+        <!-- Concept 7: Founder Effect -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">The Founder Effect</h3>
+          <p>
+            The <span class="term">founder effect</span> occurs when a small group of individuals becomes
+            separated from a larger population and establishes a new one. The founders carry
+            only a subset of the original gene pool. Over time, the new population's genotypes
+            and traits will resemble those of the small founding group, which may be very
+            different from the original population.
+          </p>
+          <p>
+            It is a random sample, meaning the founders do not necessarily represent the original
+            population they came from.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] After the tutorial, the dish is reset and 10 new random embers
+            are spawned. These 10 founders determine every allele that will ever exist in
+            the population unless mutation occurs.
+          </div>
+        </div>
+
+        <!-- Concept 8: Epistasis -->
+        <div class="guide-box">
+          <h3 class="guide-box-title">Epistasis</h3>
+          <p>
+            <span class="term">Epistasis</span> occurs when the expression of one gene is dependent on the
+            presence of one or more "modifier" genes. A classic example is albinism, where an organism
+            might carry all the alleles for dark brown eyes, but if it carries the epistatic
+            gene for albinism, those eye colour genes are masked completely.
+          </p>
+          <div class="guide-box-ingame">
+            [ In the game ] Every ember carries a hidden <em>flicker gene</em>. When its strength
+            is high enough, it can turn the flicker gene on, which in turn zeroes out one colour channel (red, green, or
+            blue), which produces unexpected colours regardless of the ember's colour alleles. This is <span
+              class="term">epistasis</span>, the phenomenon of one gene masking the expression of another.
+          </div>
+        </div>
+
+      </section>
+
+      <section id="modes-overview" class="content-section">
+        <h2>Game Modes Overview</h2>
+        <p>
+          <span class="game-name">Genesis: Ember</span> features several directed teaching modes. Each mode is accessed
+          by entering a specific keyword (Class Code) on the start screen. If the keyword is left blank, the game starts
+          in free play mode.
+        </p>
+        <p>
+          In all directed modes, the game begins with a short tutorial. After the tutorial concludes, the screen dips to
+          black and the player is presented with the mode's specific goal. The dish is cleared, and 10 new random embers
+          spawn, practically demonstrating the <span class="term">founder effect</span>.
+        </p>
+      </section>
+
+      <section id="mode-fixation" class="content-section">
+        <h2>Fixation Mode</h2>
+        <div class="margin-label" style="top: 2.5rem;">
+          <span class="margin-label-title">CLASS CODE&emsp;</span><br>
+          Keyword:<strong><span
+              style="font-family: var(--font-mono); color: var(--accent-danger);">fixation</span></strong>
+        </div>
+        <div class="guide-box tape-var-c">
+          <p><strong>Keyword:</strong> <span
+              style="font-family: var(--font-mono); font-weight: bold; font-size: 1.1rem; color: var(--accent-danger);">fixation</span>
+          </p>
+          <p><strong>Goal:</strong> Achieve fixation by ensuring all living embers (minimum 10) carry the exact same
+            colour allele.</p>
+          <p><strong>What it teaches:</strong> You are the selector, and diversity is the default. To achieve fixation,
+            students must actively cull all competing <span class="term">alleles</span> from the <span class="term">gene
+              pool</span>.</p>
+        </div>
+      </section>
+
+      <section id="mode-genotype" class="content-section">
+        <h2>Diversity Mode (Genotype)</h2>
+        <div class="margin-label" style="top: 2.5rem;">
+          <span class="margin-label-title">CLASS CODE&emsp;</span><br>
+          Keyword: <strong><span
+              style="font-family: var(--font-mono); color: var(--accent-cyan);">genotype</span></strong>
+        </div>
+        <div class="guide-box tape-var-a">
+          <p><strong>Keyword:</strong> <span
+              style="font-family: var(--font-mono); font-weight: bold; font-size: 1.1rem; color: var(--accent-cyan)">genotype</span>
+          </p>
+          <p><strong>Goal:</strong> Maintain at least 20 instances of each founding allele in the <span
+              class="term">gene pool</span> simultaneously.</p>
+          <p><strong>What it teaches:</strong> Diversity is fragile. Students must carefully manage the population to
+            prevent <span class="term">genetic drift</span> from eliminating rare <span class="term">alleles</span>.
+            They must work with what the <span class="term">founder effect</span> gave them.</p>
+        </div>
+      </section>
+
+      <section id="mode-founding" class="content-section">
+        <h2>Directed Selection Mode (Founding)</h2>
+        <div class="margin-label" style="top: 2.5rem;">
+          <span class="margin-label-title">CLASS CODE&emsp;</span><br>
+          Keyword: <strong><span
+              style="font-family: var(--font-mono); color: var(--accent-green);">founding</span></strong>
+        </div>
+        <div class="guide-box tape-var-d">
+          <p><strong>Keyword:</strong> <span
+              style="font-family: var(--font-mono); font-weight: bold; font-size: 1.1rem; color: var(--accent-green)">founding</span>
+          </p>
+          <p><strong>Goal:</strong> Grow a randomly designated target allele to 50 instances without letting any other
+            founding allele drop to zero.</p>
+          <p><strong>What it teaches:</strong> Directed selection has trade-offs. Favouring one trait heavily can
+            inadvertently cause a <span class="term">bottleneck</span> for others. Students learn they are constrained
+            by their starting conditions.</p>
+        </div>
+      </section>
+
+      <section id="mode-flicker" class="content-section">
+        <h2>Epistasis Mode (Flicker)</h2>
+        <div class="margin-label" style="top: 2.5rem;">
+          <span class="margin-label-title">CLASS CODE&emsp;</span><br>
+          Keyword: <strong><span
+              style="font-family: var(--font-mono); color: var(--accent-danger);">flicker</span></strong>
+        </div>
+        <div class="guide-box tape-var-b">
+          <p><strong>Keyword:</strong> <span
+              style="font-family: var(--font-mono); font-weight: bold; font-size: 1.1rem; color: var(--accent-danger);">flicker</span>
+          </p>
+          <p><strong>Goal:</strong> Fulfill 5 specific orders that require embers expressing the flicker gene.</p>
+          <p><strong>What it teaches:</strong> <span class="term">Epistasis</span> is heritable and can be selected for.
+            Because the flicker gene masks the underlying <span class="term">genotype</span>, breeding for it requires
+            careful observation of inheritance patterns.</p>
+        </div>
+      </section>
+
+      <section id="after-playing" class="content-section">
+        <h2>After Playing: Discussion &amp; Reflection</h2>
+
+        <!-- Margin Notes -->
+        <div class="margin-note" style="top: 4rem; transform: rotate(1deg);">
+          Don't rush to give them the answers! Let the students debate why a colour vanished.
+        </div>
+        <div class="margin-note" style="top: 16rem; transform: rotate(-3deg);">
+          Validating their frustration makes the transition from 'game' to 'learning' much easier.
+          <svg
+            style="position: absolute; left: -0.6rem; bottom: -2rem; width: 4rem; height: 2.5rem; overflow: visible; opacity: 0.6;"
+            viewBox="0 0 100 50">
+            <path d="M 90 10 Q 50 40 10 25 L 25 15 M 10 25 L 20 40" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+
+        <p>Use these questions to prompt class discussion after students have completed the game modes:</p>
+
+        <div class="guide-box tape-var-a">
+          <h3 class="guide-box-title">Observation &amp; Extinction</h3>
+          <ul class="ember-list">
+            <li>
+              <span class="ember-dot ember-dot-gold"></span>
+              "What happened to the population's colors over time? Did any colors disappear? Why do you think that
+              happened?"
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-violet"></span>
+              "If a specific color was missing from the 10 founding embers at the start of a mode, could that <span
+                class="term">allele</span> ever appear later? What does this tell us about the <span
+                class="term">founder effect</span>?"
+            </li>
+          </ul>
+        </div>
+
+        <div class="guide-box tape-var-c">
+          <h3 class="guide-box-title">Facilitating Discussion</h3>
+          <p>
+            Expect students to feel overwhelmed. The game is intentionally chaotic, populations will crash, and random
+            events
+            will interfere. This is a feature, not a bug. Use this frustration as a teaching moment.
+            Remind students that real populations aren't static, they are dynamic, and will constantly change due to
+            random events,
+            and that is normal.
+          </p>
+          <ul class="ember-list">
+            <li>
+              <span class="ember-dot ember-dot-crimson"></span>
+              "Did you feel like you had control? Why or why not?"
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-blue"></span>
+              "What does this tell us about real populations facing environmental challenges (bottlenecks)?"
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-gold"></span>
+              "How does it feel when diversity is lost and you can't get it back?"
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="reference" class="content-section">
+        <h2>Reference Materials</h2>
+        <div class="guide-box tape-var-d">
+          <h3 class="guide-box-title">Historical Figures</h3>
+          <p>
+            <strong>Gregor Mendel (1822–1884)</strong><br>
+            A monk, gardener, and the father of modern genetics who crossbred and purebred peas for many years. He
+            observed that he could predict the ratio of traits in later generations. He saw that traits were passed down
+            from parents to their offspring, and called them "hereditary factors". While <span
+              class="game-name">Genesis: Ember</span> explores more complex inheritance, Mendel's work laid the absolute
+            foundation.
+          </p>
+          <p style="margin-top: 1rem;">
+            <strong>Wilhelm Johannsen (1857–1927)</strong><br>
+            A Danish pharmacist, botanist, plant physiologist, and geneticist. He coined the core terminology we still
+            use today, and which you use in this game, including the terms <span class="term">gene</span>, <span
+              class="term">phenotype</span>, and <span class="term">genotype</span>.
+          </p>
+        </div>
+
+        <div class="guide-box tape-var-b" style="margin-top: 2rem;">
+          <h3 class="guide-box-title">External Resources</h3>
+          <p>Links and research materials used in the development of the game:</p>
+          <ul class="ember-list">
+            <li>
+              <span class="ember-dot ember-dot-gold"></span>
+              <a href="https://bio.libretexts.org/Bookshelves/Genetics/Online_Open_Genetics_(Nickle_and_Barrette-Ng)/03%3A_Genetic_Analysis_of_Single_Genes/3.02%3A_Relationships_Between_Genes_Genotypes_and_Phenotypes"
+                target="_blank" rel="noopener noreferrer">Relationships Between Genes, Genotypes, and Phenotypes
+                (LibreTexts)</a>
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-violet"></span>
+              <a href="https://www.science.org/doi/10.1126/sciadv.abd1239" target="_blank"
+                rel="noopener noreferrer">Science Advances: Relevant Genetic Study</a>
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-crimson"></span>
+              <a href="https://www.genome.gov/genetics-glossary/Trait" target="_blank" rel="noopener noreferrer">NHGRI
+                Genetics Glossary: Trait</a>
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-blue"></span>
+              <a href="https://www.genome.gov/genetics-glossary/Phenotype" target="_blank"
+                rel="noopener noreferrer">NHGRI Genetics Glossary: Phenotype</a>
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-gold"></span>
+              <a href="https://www.genome.gov/genetics-glossary/genotype" target="_blank"
+                rel="noopener noreferrer">NHGRI Genetics Glossary: Genotype</a>
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-violet"></span>
+              <a href="https://www.britannica.com/science/selective-breeding" target="_blank"
+                rel="noopener noreferrer">Selective Breeding (Britannica)</a>
+            </li>
+            <li>
+              <span class="ember-dot ember-dot-crimson"></span>
+              <a href="https://www.genome.gov/about-genomics/fact-sheets/Eugenics-and-Scientific-Racism" target="_blank"
+                rel="noopener noreferrer">Eugenics and Scientific Racism (NHGRI Fact Sheet)</a>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+</body>
+
+</html>
