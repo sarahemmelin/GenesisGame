@@ -130,7 +130,7 @@ The remaining population now define everyone."
 ---
 
 ## Campaign Structure
-The start screen has a keyword input field. Entering a keyword launches a specific teacher-directed mode. If no keyword is entered, the game starts in open play.
+The plan: The start screen has a keyword input field. Entering a keyword launches a specific teacher-directed mode. If no keyword is entered, the game starts in open play.
 
 ### All modes: shared structure
 1. Tutorial runs first (skippable)
